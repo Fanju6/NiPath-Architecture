@@ -130,5 +130,5 @@ test('Desktop: presentation has no fake nodes or connections and only overview r
   await expect(page.getByText('Core 未连接', { exact: true }).first()).toBeVisible()
   await page.getByRole('button', { name: '代理', exact: true }).click()
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
-  await expect(page.getByText('尚未创建策略组')).toBeVisible()
+  await expect(page.getByText('新建策略组后在此管理成员')).toBeVisible()
 })
