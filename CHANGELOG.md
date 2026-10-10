@@ -2,6 +2,15 @@
 
 此处记录架构文档修订；不是 NiPath 软件版本发布日志。
 
+## v1.4 — 开源项目实现对标与工程细化
+- 研究 sing-box 官方 API/Dashboard、sing-box for Android、FlClash、Clash Verge Rev、Hiddify 的核心实现与设计原则；保留可追溯源码报告（`research/2026-10-open-source-architecture-benchmark.md`）。
+- 明确 Engine gRPC/Protobuf Adapter、应用层 HTTP/JSON + SSE 职责及凭据隔离，减少重复协议实现。
+- 引入单所有者运行状态机、latest-intent 收敛、generation/readiness 检查与启动失败清理要求。
+- 强化静态策略组 JSON / Catalog / sing-box 运行态三类数据的 UI 聚合、pending/stale 回滚与重同步。
+- 细化 Android VpnService TUN FD、protect、onRevoke、Always-on 及 Root/VPN 能力边界。
+- 增加前端服务调用门禁、有限事件队列、开发网络隔离与 E01–E10 可验证实验。
+- 根据现状明确 GitHub 架构仓库为公开协作仓库；修正重复 ADR 编号。
+
 ## v1.3 — NiPath 1.0 产品确立
 - 新品牌正式确定为 **NiPath（奶屁 / NP）**。
 - 产品版本以 NiPath 1.0.0 重新起步，旧版本 NetProxy 9.0 仅为历史草案称呼。
