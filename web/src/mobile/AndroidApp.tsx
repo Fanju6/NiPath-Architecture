@@ -32,14 +32,6 @@ const destinations: { id:Page; title:string; icon:typeof Home; selectedIcon:type
 ]
 type Detail = {type:'group'; tag:string}|{type:'json'}|{type:'about'}
 type AddKind = 'group'|'source'|'rule'|null
-const pageDescriptions: Record<Page, string> = {
-  overview: '服务状态与实时流量',
-  proxies: '策略组和代理节点',
-  resources: '订阅与本地资源',
-  rules: '路由和 DNS',
-  settings: '应用和内核设置',
-}
-
 function IconButton({label,children,onClick}: {label:string;children:React.ReactNode;onClick:()=>void}) {
  return <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0 rounded-full" aria-label={label} onClick={onClick}>{children}</Button>
 }
@@ -223,14 +215,7 @@ export default function AndroidApp(){
  const {page,setPage,notice,clearNotice,theme}=useUI()
  const [detail,setDetail]=React.useState<Detail|null>(null)
  const [sheet,setSheet]=React.useState<AddKind>(null)
- const [collapsed,setCollapsed]=React.useState(false)
  const scrollRef=React.useRef<HTMLElement>(null)
- const onContentScroll: React.UIEventHandler<HTMLElement> = event => {
-   if (detail) return
-   // Miuix TopAppBar scrollBehavior analogue: one title, never two.
-   const next = event.currentTarget.scrollTop > 42
-   setCollapsed(previous => previous === next ? previous : next)
- }
  const active=destinations.find(x=>x.id===page)!
  React.useEffect(()=>{
    // Browser history also provides a sensible Android system Back fallback in WebView.
@@ -246,7 +231,7 @@ export default function AndroidApp(){
    if(window.history.state?.nipathDetail)window.history.back()
    else setDetail(null)
  }
- const navigate=(id:Page)=>{setDetail(null);setCollapsed(false);setPage(id);if(scrollRef.current)scrollRef.current.scrollTop=0}
+ const navigate=(id:Page)=>{setDetail(null);setPage(id);if(scrollRef.current)scrollRef.current.scrollTop=0}
  const title=detail?(detail.type==='group'?detail.tag:detail.type==='json'?'原生配置':'关于 NiPath'):active.title
  return <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background text-foreground" data-testid="android-shell" data-mobile-theme={theme}>
    <header className="shrink-0 border-b bg-background pt-[env(safe-area-inset-top)]" data-testid="mobile-app-bar">
@@ -256,24 +241,15 @@ export default function AndroidApp(){
          <span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>
        </div>
      ) : (
-       <div className={collapsed
-         ? 'flex h-14 items-center gap-2 px-4'
-         : 'flex min-h-20 items-end gap-2 px-5 pb-4 pt-3'}>
-         {collapsed ? (
-           <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-collapsed-title">{active.title}</h1>
-         ) : (
-           <div className="min-w-0 flex-1 space-y-1" data-testid="mobile-expanded-title">
-             <h1 className="text-[30px] font-semibold leading-tight tracking-tight">{active.title}</h1>
-             <p className="text-sm text-muted-foreground">{pageDescriptions[page]}</p>
-           </div>
-         )}
+       <div className="flex h-14 items-center gap-2 px-4">
+         <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-page-title">{active.title}</h1>
          {page==='proxies'&&<IconButton label="添加策略组" onClick={()=>setSheet('group')}><Plus size={22}/></IconButton>}
          {page==='resources'&&<IconButton label="添加订阅" onClick={()=>setSheet('source')}><Plus size={22}/></IconButton>}
          {page==='rules'&&<IconButton label="新增路由规则" onClick={()=>setSheet('rule')}><Plus size={22}/></IconButton>}
        </div>
      )}
    </header>
-   <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" onScroll={onContentScroll} ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
+   <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
      {detail?.type==='group'?<GroupDetail tag={detail.tag}/>:
       detail?.type==='json'?<JsonScreen/>:
       detail?.type==='about'?<AboutScreen/>:
