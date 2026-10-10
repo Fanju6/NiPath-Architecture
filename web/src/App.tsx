@@ -1,4 +1,5 @@
 import * as React from 'react'
+import AndroidApp from './mobile/AndroidApp'
 import {
   Activity, ArrowDownToLine, ArrowRight, ArrowUpFromLine, Blocks, Check, ChevronRight,
   CircleHelp, Code2, ExternalLink, Globe2, HardDrive, LayoutDashboard,
@@ -272,4 +273,20 @@ function AppContent(){
    {notice&&<div className="fixed bottom-5 right-5 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-md border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg" role="status"><span>{notice}</span><Button size="sm" variant="ghost" onClick={clearNotice}>关闭</Button></div>}
  </SidebarInset>
 }
-export default function App(){return <SidebarProvider><AppSidebar/><AppContent/></SidebarProvider>}
+// Material 3 navigation bar for compact Android/mobile windows; dashboard remains on larger screens.
+const compactQuery = '(max-width: 839px)'
+const getCompact = () => window.matchMedia(compactQuery).matches
+const listenCompact = (notify: () => void) => {
+  const query = window.matchMedia(compactQuery)
+  query.addEventListener('change', notify)
+  return () => query.removeEventListener('change', notify)
+}
+function ThemeSync() {
+  const theme = useUI(s => s.theme)
+  React.useEffect(() => { document.documentElement.classList.toggle('dark', theme === 'dark') }, [theme])
+  return null
+}
+export default function App(){
+ const compact = React.useSyncExternalStore(listenCompact,getCompact,()=>false)
+ return <><ThemeSync/>{compact?<AndroidApp/>:<SidebarProvider><AppSidebar/><AppContent/></SidebarProvider>}</>
+}
