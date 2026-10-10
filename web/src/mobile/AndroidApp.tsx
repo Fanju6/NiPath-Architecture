@@ -113,16 +113,53 @@ function GroupDetail({tag}: {tag:string}) {
  </div>
 }
 function ResourcesScreen() {
- const {sources,nodes,refreshSource}=useUI()
+ const {sources,nodes,refreshSource,addNode,updateNode,removeNode,updateSource,removeSource,show}=useUI()
  const [tab,setTab]=React.useState<'sources'|'nodes'>('sources')
+ const [editSource,setEditSource]=React.useState<string|null>(null)
+ const [editNode,setEditNode]=React.useState<string|null>(null)
+ const [draftName,setDraftName]=React.useState('')
+ const [draftUrl,setDraftUrl]=React.useState('')
+ const [draftProtocol,setDraftProtocol]=React.useState('Shadowsocks')
+ const [draftAddress,setDraftAddress]=React.useState('')
+ const [draftTag,setDraftTag]=React.useState('')
+ const startSource=(id:string)=>{const src=sources.find(x=>x.id===id);if(!src)return;setEditSource(id);setDraftName(src.name);setDraftUrl(src.url)}
+ const startNode=(tag:string)=>{const node=nodes.find(x=>x.tag===tag);setEditNode(tag);setDraftTag(tag);setDraftName(node?.name||'');setDraftAddress(node?.address||'');setDraftProtocol(node?.protocol||'Shadowsocks')}
+ const saveSource=()=>{if(!editSource||!draftName.trim()||!/^https?:\\/\\//.test(draftUrl)){show('请输入来源名称和合法的 HTTP(S) 地址');return}updateSource(editSource,draftName.trim(),draftUrl);setEditSource(null)}
+ const saveNode=()=>{if(!draftTag.trim()||!draftName.trim()||!draftAddress.trim()){show('请填写节点 tag、名称及服务器地址');return}
+   const node={tag:draftTag.trim(),name:draftName.trim(),source:'本地节点',protocol:draftProtocol,latency:null,flag:'',address:draftAddress.trim()}
+   if(editNode)updateNode(editNode,node);else addNode(node);setEditNode(null)}
+
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Tabs value={tab} onValueChange={v=>setTab(v as 'sources'|'nodes')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="sources">订阅 · {sources.length}</TabsTrigger><TabsTrigger value="nodes">节点 · {nodes.length}</TabsTrigger></TabsList></Tabs>
    {tab==='sources'?<Section title="订阅列表">
     {sources.map(s=><div className="space-y-3 px-4 py-4" key={s.id}>
-      <div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><Globe2 size={21}/></div><div className="flex min-w-0 flex-1 flex-col gap-1"><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></div><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>refreshSource(s.id)}><RefreshCw size={18}/></Button></div>
+      <div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><Globe2 size={21}/></div><button className="flex min-w-0 flex-1 flex-col gap-1 text-left" onClick={()=>startSource(s.id)} aria-label={'编辑'+s.name}><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></button><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>{void refreshSource(s.id)}}><RefreshCw size={18}/></Button></div>
       <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-xs text-muted-foreground"><span>{s.updated}</span><Badge variant="outline">{s.status==='applied'?'已生效':s.status==='failed'?'更新失败':'待同步'}</Badge></div>
     </div>)}
-    </Section>:<Section title="节点列表">{nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{latencyText(n.latency)}</span>}/>)}</Section>}
+    </Section>:<Section title="节点列表">
+    {nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{latencyText(n.latency)}</span>} onClick={()=>startNode(n.tag)}/>)}
+    {!nodes.length&&<p className="p-6 text-center text-sm text-muted-foreground">还没有节点</p>}
+    <div className="p-3"><Button className="w-full" variant="outline" onClick={()=>{setDraftTag('local/'+crypto.randomUUID().slice(0,8));setDraftName('');setDraftAddress('');setDraftProtocol('Shadowsocks');setEditNode('new')}}><Plus/>添加本地节点</Button></div>
+   </Section>}
+   {!sources.length&&tab==='sources'&&<p className="text-center text-sm text-muted-foreground">尚未添加订阅，可通过顶部添加按钮创建。</p>}
+   <Sheet open={editSource!==null} onOpenChange={open=>{if(!open)setEditSource(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+     <SheetHeader><SheetTitle>编辑订阅来源</SheetTitle><SheetDescription>修改来源名称或订阅地址</SheetDescription></SheetHeader>
+     <div className="space-y-3"><label className="block space-y-2 text-sm">名称<Input value={draftName} onChange={e=>setDraftName(e.target.value)}/></label>
+       <label className="block space-y-2 text-sm">URL<Input value={draftUrl} onChange={e=>setDraftUrl(e.target.value)}/></label>
+       <Button className="w-full" onClick={saveSource}>保存</Button>
+       <Button variant="destructive" className="w-full" onClick={()=>{if(editSource)removeSource(editSource);setEditSource(null)}}>删除来源</Button>
+     </div></SheetContent></Sheet>
+   <Sheet open={editNode!==null} onOpenChange={open=>{if(!open)setEditNode(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+     <SheetHeader><SheetTitle>{editNode==='new'?'添加本地节点':'编辑节点资料'}</SheetTitle><SheetDescription>节点运行配置与认证信息需由 Core 校验</SheetDescription></SheetHeader>
+     <div className="space-y-3"><label className="block space-y-2 text-sm">Tag<Input value={draftTag} onChange={e=>setDraftTag(e.target.value)} disabled={editNode!=='new'}/></label>
+     <label className="block space-y-2 text-sm">名称<Input value={draftName} onChange={e=>setDraftName(e.target.value)}/></label>
+     <label className="block space-y-2 text-sm">地址<Input value={draftAddress} onChange={e=>setDraftAddress(e.target.value)}/></label>
+     <label className="block space-y-2 text-sm">协议<NativeSelect value={draftProtocol} onChange={e=>setDraftProtocol(e.target.value)}>
+       {['Shadowsocks','VLESS','VMess','Trojan','Hysteria2','TUIC','AnyTLS'].map(x=><option key={x}>{x}</option>)}
+     </NativeSelect></label>
+     <Button className="w-full" onClick={saveNode}>保存节点资料</Button>
+     {editNode!=='new'&&<Button variant="destructive" className="w-full" onClick={()=>{if(editNode)removeNode(editNode);setEditNode(null)}}>删除节点</Button>}
+     </div></SheetContent></Sheet>
  </div>
 }
 function RulesScreen() {
