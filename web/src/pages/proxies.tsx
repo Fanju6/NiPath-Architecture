@@ -1,3 +1,6 @@
+import { Textarea } from '../components/ui/textarea'
+import { NativeSelect } from '../components/ui/native-select'
+import { Input } from '../components/ui/input'
 import { ArrowLeft, Check, ChevronRight, CircleHelp, Filter, GitBranch, Globe2, Layers3, Network, Plus, RefreshCcw, Search, Shuffle, Timer, Trash2, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -39,7 +42,7 @@ export function ProxiesPage(){
    <div className="proxy-layout">
       <Card className={'group-panel '+(detailOpen?'mobile-hide':'')}>
         <div className="panel-title"><CardTitle>策略组 <Badge tone="blue">{config.outbounds.length}</Badge></CardTitle></div>
-        <div className="searchbox"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组" aria-label="搜索策略组"/></div>
+        <div className="searchbox"><Search size={16}/><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组" aria-label="搜索策略组"/></div>
         <div className="group-list">{filtered.length===0&&<p className="empty-state">没有符合条件的策略组</p>}
          {filtered.map(g=><button className={'group-item '+(selectedGroup===g.tag?'selected':'')} key={g.tag} onClick={()=>select(g.tag)}>
            <span className={'group-icon '+g.type}><KindIcon type={g.type}/></span>
@@ -62,7 +65,7 @@ export function ProxiesPage(){
          :<><div><small>调度策略</small><strong>{group.strategy||'round-robin'}</strong></div><Badge tone="blue">连接级</Badge></>}
        </div>
        <div className="section-head subhead"><div><CardTitle>候选成员</CardTitle><p>展示配置内引用，来源与延迟来自演示数据</p></div><Button size="sm" variant="outline" onClick={()=>show('演示：测速未调用 sing-box URLTest RPC，结果不会更新')}><RefreshCcw size={14}/> 测速</Button></div>
-       <div className="searchbox member-search"><Filter size={16}/><input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="筛选节点或策略组" aria-label="筛选候选成员"/></div>
+       <div className="searchbox member-search"><Filter size={16}/><Input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="筛选节点或策略组" aria-label="筛选候选成员"/></div>
        <div className="member-list">{members.length===0&&<p className="empty-state">暂无候选成员或筛选结果</p>}
        {members.map(tag=>{
           const node=nodes.find(n=>n.tag===tag);const sub=config.outbounds.find(g=>g.tag===tag);const builtin=tag==='direct'||tag==='block';
@@ -87,9 +90,9 @@ export function ProxiesPage(){
    </div>
    <Dialog open={creating} onOpenChange={setCreating}><DialogContent><DialogTitle>新建策略组</DialogTitle><DialogDescription className="dialog-subtitle">在同一份原生 sing-box JSON 中创建策略组，不存在第二种配置模式。</DialogDescription>
     <form className="form-stack" onSubmit={handleSubmit(create)}>
-       <label>策略组名称<input placeholder="例如：流媒体节点" {...register('tag')}/>{errors.tag&&<small className="field-error">{errors.tag.message}</small>}</label>
-       <label>组类型<select {...register('type')}><option value="selector">Selector · 手动选择</option><option value="urltest">URLTest · 自动选择</option><option value="load-balance">LoadBalance · 负载均衡</option></select></label>
-       <label>候选成员 tag（逗号或换行分隔）<textarea rows={4} placeholder="sub-1/us-los-angeles-01&#10;sub-1/jp-tokyo-03" {...register('members')}/>{errors.members&&<small className="field-error">{errors.members.message}</small>}</label>
+       <label>策略组名称<Input placeholder="例如：流媒体节点" {...register('tag')}/>{errors.tag&&<small className="field-error">{errors.tag.message}</small>}</label>
+       <label>组类型<NativeSelect {...register('type')}><option value="selector">Selector · 手动选择</option><option value="urltest">URLTest · 自动选择</option><option value="load-balance">LoadBalance · 负载均衡</option></NativeSelect></label>
+       <label>候选成员 tag（逗号或换行分隔）<Textarea rows={4} placeholder="sub-1/us-los-angeles-01&#10;sub-1/jp-tokyo-03" {...register('members')}/>{errors.members&&<small className="field-error">{errors.members.message}</small>}</label>
        <div className="dialog-actions"><Button type="button" variant="outline" onClick={()=>setCreating(false)}>取消</Button><Button type="submit"><Plus size={16}/> 创建（演示）</Button></div>
     </form>
    </DialogContent></Dialog>
