@@ -9,6 +9,7 @@
 ## 从这里开始
 
 - 📖 [当前架构设计规范](ARCHITECTURE.md)
+- 🔬 [成熟开源项目源码对标与实施细化（2026-10）](research/2026-10-open-source-architecture-benchmark.md)
 - 🕰️ [历次架构修订](versions/)
 - 📝 [修订记录](CHANGELOG.md)
 - 🤝 [参与贡献](CONTRIBUTING.md)
