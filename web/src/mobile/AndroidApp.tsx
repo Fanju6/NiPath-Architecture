@@ -81,7 +81,7 @@ function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
    <DemoNote/>
  </div>
 }
-function ProxiesScreen({openGroup,onAdd}: {openGroup:(tag:string)=>void;onAdd:()=>void}) {
+function ProxiesScreen({openGroup}: {openGroup:(tag:string)=>void}) {
  const {config,selected,nodes}=useUI()
  const [search,setSearch]=React.useState('')
  const groups=config.outbounds.filter(g=>g.tag.toLowerCase().includes(search.toLowerCase()))
@@ -97,7 +97,6 @@ function ProxiesScreen({openGroup,onAdd}: {openGroup:(tag:string)=>void;onAdd:()
     {!groups.length&&<div className="p-6 text-center text-sm text-muted-foreground">没有匹配的策略组</div>}
    </Section>
    <DemoNote>策略组数据来自同一份演示 JSON；当前选择并非真实出口。</DemoNote>
-   <Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="添加策略组"><Plus size={23}/></Button>
  </div>
 }
 function GroupDetail({tag}: {tag:string}) {
@@ -123,7 +122,7 @@ function GroupDetail({tag}: {tag:string}) {
    <DemoNote>{g.type==='load-balance'?'负载均衡不存在全局选中的固定节点。':'节点选择与延迟均为演示，不代表真实连接。'}</DemoNote>
  </div>
 }
-function ResourcesScreen({onAdd}: {onAdd:()=>void}) {
+function ResourcesScreen() {
  const {sources,nodes,refreshSource}=useUI()
  const [tab,setTab]=React.useState<'sources'|'nodes'>('sources')
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
@@ -135,10 +134,9 @@ function ResourcesScreen({onAdd}: {onAdd:()=>void}) {
     </div>)}
     </Section>:<Section title="节点列表">{nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{latencyText(n.latency)}</span>}/>)}</Section>}
    <DemoNote>订阅刷新后需要内核明确回执，不能将下载完成误报为已生效。</DemoNote>
-   <Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="添加订阅"><Plus size={23}/></Button>
  </div>
 }
-function RulesScreen({onAdd}: {onAdd:()=>void}) {
+function RulesScreen() {
  const {config,toggleRule,show}=useUI()
  const [tab,setTab]=React.useState<'route'|'dns'>('route')
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
@@ -146,7 +144,6 @@ function RulesScreen({onAdd}: {onAdd:()=>void}) {
    {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}><div className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{r.match}</span><span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
     <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="当前演示配置暂无 DNS 规则" onClick={()=>show('DNS 规则未来将直接读取原生 JSON')}/></Section>}
    <DemoNote>这里只对演示 JSON 进行修改，未进行真实路由命中与配置校验。</DemoNote>
-   {tab==='route'&&<Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="新增路由规则"><Plus size={23}/></Button>}
  </div>
 }
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
@@ -260,7 +257,9 @@ export default function AndroidApp(){
          collapsed?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-collapsed-title">{active.title}</span>:
            <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">NiPath</span>}
        {!detail&&<Badge variant="outline" className="text-[10px]">DEMO</Badge>}
-       {!detail&&<IconButton label="帮助" onClick={()=>clearNotice()}><CircleHelp size={22}/></IconButton>}
+       {!detail&&page==='proxies'&&<IconButton label="添加策略组" onClick={()=>setSheet('group')}><Plus size={22}/></IconButton>}
+     {!detail&&page==='resources'&&<IconButton label="添加订阅" onClick={()=>setSheet('source')}><Plus size={22}/></IconButton>}
+     {!detail&&page==='rules'&&<IconButton label="新增路由规则" onClick={()=>setSheet('rule')}><Plus size={22}/></IconButton>}
      </div>
      {!detail&&!collapsed&&<div className="space-y-1 px-5 pb-4 pt-1" data-testid="mobile-expanded-title">
        <h1 className="text-[30px] font-semibold leading-tight tracking-tight">{active.title}</h1>
@@ -272,9 +271,9 @@ export default function AndroidApp(){
       detail?.type==='json'?<JsonScreen/>:
       detail?.type==='about'?<AboutScreen/>:
       page==='overview'?<OverviewScreen navigate={navigate}/>:
-      page==='proxies'?<ProxiesScreen openGroup={tag=>openDetail({type:'group',tag})} onAdd={()=>setSheet('group')}/>:
-      page==='resources'?<ResourcesScreen onAdd={()=>setSheet('source')}/>:
-      page==='rules'?<RulesScreen onAdd={()=>setSheet('rule')}/>:
+      page==='proxies'?<ProxiesScreen openGroup={tag=>openDetail({type:'group',tag})}/>:
+      page==='resources'?<ResourcesScreen/>:
+      page==='rules'?<RulesScreen/>:
       <SettingsScreen openJson={()=>openDetail({type:'json'})} openAbout={()=>openDetail({type:'about'})}/>}
    </main>
    {!detail&&<nav className="grid shrink-0 grid-cols-5 gap-1 border-t bg-background px-2 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2" aria-label="底部主导航">
