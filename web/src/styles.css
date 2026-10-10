@@ -1,5 +1,49 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* shadcn/ui semantic tokens: the existing NiPath palette is mapped once here. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--ui-muted);
+  --color-muted-foreground: var(--ui-muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+:root {
+  --radius: .75rem;
+  --background: var(--bg); --foreground: var(--text);
+  --card: var(--paper); --card-foreground: var(--text);
+  --popover: var(--paper); --popover-foreground: var(--text);
+  --primary: var(--brand); --primary-foreground: #fff;
+  --secondary: #edf3ff; --secondary-foreground: #28539b;
+  --ui-muted: #f1f5f9; --ui-muted-foreground: var(--muted);
+  --accent: #e9f2ff; --accent-foreground: #1b4d9a;
+  --destructive: #dc455c; --border: var(--line); --input: var(--line);
+  --ring: #7cafff;
+}
+.dark {
+  --secondary: #293b56; --secondary-foreground: #c4d8ff;
+  --ui-muted: #263349; --accent: #2b4162;
+  --accent-foreground: #c7dcff; --destructive: #ff667e;
+  --ring: #83acff;
+}
 :root{
   font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   color:#18223a;background:#f5f7fb;font-synthesis:none;text-rendering:optimizeLegibility;
@@ -88,7 +132,7 @@ a{color:inherit;text-decoration:none}
 .editor-notice{display:flex;align-items:flex-start;gap:8px;border-radius:11px;padding:12px;background:#fff6e8;color:#a77b37;font-size:11px;line-height:1.6;margin-bottom:15px}.editor-notice svg{flex-shrink:0}
 .json-editor{width:100%;min-height:430px;background:#101b2c!important;color:#d4e3ff!important;padding:17px;border-radius:12px;border:1px solid #394963;font-size:12px;line-height:1.65;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;resize:vertical;tab-size:2}.editor-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:15px}.json-error{margin-top:9px;overflow-wrap:anywhere}
 .about-brand{display:flex;align-items:center;gap:15px}.about-brand h2{font-size:22px;font-weight:850}.about-brand p{color:var(--muted)}.about-description{color:var(--muted);font-size:12px;line-height:1.8;margin:19px 0}.about-row{display:flex;justify-content:space-between;gap:15px;padding:14px 0;border-top:1px solid var(--line);font-size:12px}.about-row span,.about-row a{color:var(--muted);text-align:right}.about-row a{color:var(--brand)}
-.form-stack{display:grid;gap:17px;margin-top:23px}.form-stack label{font-size:12px;font-weight:750;display:block}.form-stack input,.form-stack select,.form-stack textarea{display:block;width:100%;margin-top:8px;padding:11px 12px;border:1px solid #dde4ef;border-radius:10px;background:white;color:#172338;font-weight:400;outline:0}.form-stack input:focus,.form-stack textarea:focus{border-color:#5796f1}.field-error{display:block;font-size:11px;color:#d84c59;margin-top:5px}.dialog-subtitle{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.65}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:7px}
+.form-stack{display:grid;gap:17px;margin-top:23px}.form-stack label{font-size:12px;font-weight:750;display:block}.form-stack input,.form-stack select,.form-stack textarea{display:block;width:100%;margin-top:8px;padding:11px 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--foreground);font-weight:400;outline:0}.form-stack input:focus,.form-stack textarea:focus{border-color:#5796f1}.field-error{display:block;font-size:11px;color:#d84c59;margin-top:5px}.dialog-subtitle{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.65}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:7px}
 .toast{position:fixed;right:25px;bottom:24px;z-index:80;background:#1a2743;color:white;border-radius:12px;padding:12px 15px;display:flex;gap:20px;align-items:center;max-width:min(480px,calc(100vw - 32px));box-shadow:0 12px 35px #0f172a34;font-size:12px}.toast button{flex-shrink:0;color:#b7c6e0}
 .mobile-bottom-nav,.mobile-menu,.mobile-shade{display:none}
 .dark .np-card,.dark .sidebar,.dark .topbar,.dark .settings-nav{background:var(--paper);border-color:var(--line)}
