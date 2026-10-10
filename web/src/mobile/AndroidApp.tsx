@@ -32,6 +32,13 @@ const destinations: { id:Page; title:string; icon:typeof Home; selectedIcon:type
 ]
 type Detail = {type:'group'; tag:string}|{type:'json'}|{type:'about'}
 type AddKind = 'group'|'source'|'rule'|null
+const pageDescriptions: Record<Page, string> = {
+  overview: '服务状态与实时流量',
+  proxies: '策略组和代理节点',
+  resources: '订阅与本地资源',
+  rules: '路由和 DNS',
+  settings: '应用和内核设置',
+}
 
 function IconButton({label,children,onClick}: {label:string;children:React.ReactNode;onClick:()=>void}) {
  return <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0 rounded-full" aria-label={label} onClick={onClick}>{children}</Button>
@@ -55,7 +62,6 @@ function DemoNote({children}: {children?:React.ReactNode}) {
 function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
  const {demoRunning,setRunning,nodes,sources,config}=useUI()
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="space-y-1 px-1"><p className="text-xs font-medium text-muted-foreground">NiPath · Android</p><h1 className="text-2xl font-semibold tracking-tight">网络概览</h1><p className="text-sm text-muted-foreground">简单掌控，每一条连接。</p></div>
    <Card className="gap-4 bg-card py-5">
      <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{demoRunning?'模拟已连接':'模拟已停止'}</Badge></div>
      <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{demoRunning?'保护已开启':'代理未运行'}</h2><p className="text-sm text-muted-foreground">Android Root · TUN / eBPF · 演示模式</p></div>
@@ -80,7 +86,6 @@ function ProxiesScreen({openGroup,onAdd}: {openGroup:(tag:string)=>void;onAdd:()
  const [search,setSearch]=React.useState('')
  const groups=config.outbounds.filter(g=>g.tag.toLowerCase().includes(search.toLowerCase()))
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">代理</h1><p className="text-sm text-muted-foreground">选择策略组，管理节点与自动分流。</p></div>
    <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索策略组" value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组"/></div>
    <Section title={'策略组 · '+config.outbounds.length}>
     {groups.map(g=>{
@@ -103,7 +108,7 @@ function GroupDetail({tag}: {tag:string}) {
  const isManual=g.type==='selector'
  const members=g.outbounds.filter(id=>id.toLowerCase().includes(search.toLowerCase())||nodes.some(n=>n.tag===id&&n.name.toLowerCase().includes(search.toLowerCase())))
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
-   <div className="flex flex-col items-center gap-2 py-4 text-center"><span className="grid size-14 place-items-center rounded-xl bg-muted text-foreground"><Network size={26}/></span><h1 className="text-2xl font-semibold tracking-tight">{g.tag}</h1><p className="text-sm text-muted-foreground">{isManual?'手动选择':g.type==='urltest'?'自动测速':'负载均衡'} · {g.outbounds.length} 个候选</p></div>
+   <div className="flex items-center gap-3 px-1 py-2"><span className="grid size-12 shrink-0 place-items-center rounded-lg bg-muted text-foreground"><Network size={23}/></span><p className="text-sm text-muted-foreground">{isManual?'手动选择':g.type==='urltest'?'自动测速':'负载均衡'} · {g.outbounds.length} 个候选</p></div>
    <Card className="gap-2 p-4"><span className="text-xs text-muted-foreground">{isManual?'已选节点（演示）':g.type==='urltest'?'测速策略':'连接分配策略'}</span><strong className="text-base font-semibold">{isManual?(nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]||'暂无选择'):g.type==='urltest'?'自动选择最佳出口':g.strategy||'按连接调度'}</strong></Card>
    <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索成员" placeholder="搜索候选节点" value={search} onChange={e=>setSearch(e.target.value)}/></div>
    <Section title="候选节点">
@@ -122,7 +127,6 @@ function ResourcesScreen({onAdd}: {onAdd:()=>void}) {
  const {sources,nodes,refreshSource}=useUI()
  const [tab,setTab]=React.useState<'sources'|'nodes'>('sources')
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">资源</h1><p className="text-sm text-muted-foreground">订阅和节点统一管理。</p></div>
    <Tabs value={tab} onValueChange={v=>setTab(v as 'sources'|'nodes')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="sources">订阅 · {sources.length}</TabsTrigger><TabsTrigger value="nodes">节点 · {nodes.length}</TabsTrigger></TabsList></Tabs>
    {tab==='sources'?<Section title="订阅列表">
     {sources.map(s=><div className="space-y-3 px-4 py-4" key={s.id}>
@@ -138,7 +142,6 @@ function RulesScreen({onAdd}: {onAdd:()=>void}) {
  const {config,toggleRule,show}=useUI()
  const [tab,setTab]=React.useState<'route'|'dns'>('route')
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">规则</h1><p className="text-sm text-muted-foreground">管理路由与 DNS 规则。</p></div>
    <Tabs value={tab} onValueChange={v=>setTab(v as 'route'|'dns')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="route">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger></TabsList></Tabs>
    {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}><div className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{r.match}</span><span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
     <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="当前演示配置暂无 DNS 规则" onClick={()=>show('DNS 规则未来将直接读取原生 JSON')}/></Section>}
@@ -149,7 +152,6 @@ function RulesScreen({onAdd}: {onAdd:()=>void}) {
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
  const {theme,setTheme,revision,show}=useUI()
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">设置</h1><p className="text-sm text-muted-foreground">NiPath 的偏好和运行参数。</p></div>
    <Section title="个性化"><Row icon={theme==='dark'?<Moon size={21}/>:<Sun size={21}/>} title="深色主题" subtitle="跟随 NiPath 当前显示设置"
      trailing={<Switch checked={theme==='dark'} onCheckedChange={v=>setTheme(v?'dark':'light')} aria-label="深色主题"/>}/></Section>
    <Section title="内核与配置">
@@ -169,7 +171,7 @@ function JsonScreen(){
  const [error,setError]=React.useState('')
  function save(){const r=setRawConfig(raw);setError(r.ok?'':r.error||'配置无效');if(r.ok)show('演示 JSON 已写入本地状态，未应用到真实内核')}
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
-   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">原生配置</h1><p className="text-sm text-muted-foreground">配置修订 {revision} · 演示 JSON 编辑器</p></div>
+   <p className="px-1 text-sm text-muted-foreground">配置修订 {revision} · 演示 JSON 编辑器</p>
    <Card className="gap-2 p-4"><strong className="text-sm">单一配置事实源</strong><span className="text-xs text-muted-foreground">这里不会创建第二套规则或策略组数据。</span></Card>
    <Textarea className="min-h-[55dvh] font-mono text-xs leading-6" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false} aria-label="原生 JSON 配置"/>
    {error&&<p className="text-sm text-destructive" role="alert">{error}</p>}
@@ -224,7 +226,14 @@ export default function AndroidApp(){
  const {page,setPage,notice,clearNotice,theme}=useUI()
  const [detail,setDetail]=React.useState<Detail|null>(null)
  const [sheet,setSheet]=React.useState<AddKind>(null)
+ const [collapsed,setCollapsed]=React.useState(false)
  const scrollRef=React.useRef<HTMLElement>(null)
+ const onContentScroll: React.UIEventHandler<HTMLElement> = event => {
+   if (detail) return
+   // Miuix TopAppBar scrollBehavior analogue: one title, never two.
+   const next = event.currentTarget.scrollTop > 42
+   setCollapsed(previous => previous === next ? previous : next)
+ }
  const active=destinations.find(x=>x.id===page)!
  React.useEffect(()=>{
    // Browser history also provides a sensible Android system Back fallback in WebView.
@@ -240,16 +249,25 @@ export default function AndroidApp(){
    if(window.history.state?.nipathDetail)window.history.back()
    else setDetail(null)
  }
- const navigate=(id:Page)=>{setDetail(null);setPage(id);if(scrollRef.current)scrollRef.current.scrollTop=0}
+ const navigate=(id:Page)=>{setDetail(null);setCollapsed(false);setPage(id);if(scrollRef.current)scrollRef.current.scrollTop=0}
  const title=detail?(detail.type==='group'?detail.tag:detail.type==='json'?'原生配置':'关于 NiPath'):active.title
  return <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background text-foreground" data-testid="android-shell" data-mobile-theme={theme}>
-   <header className="flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background px-3 pt-[env(safe-area-inset-top)]">
-     {detail?<IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>:<span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground"><Network size={22}/></span>}
-     <span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight">{title}</span>
-     {!detail&&<Badge variant="outline" className="text-[10px]">DEMO</Badge>}
-     {!detail&&<IconButton label="帮助" onClick={()=>clearNotice()}><CircleHelp size={23}/></IconButton>}
+   <header className="shrink-0 border-b bg-background pt-[env(safe-area-inset-top)]" data-testid="mobile-app-bar">
+     <div className="flex h-14 items-center gap-2 px-3">
+       {detail?<IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>:
+         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground"><Network size={22}/></span>}
+       {detail?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>:
+         collapsed?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-collapsed-title">{active.title}</span>:
+           <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">NiPath</span>}
+       {!detail&&<Badge variant="outline" className="text-[10px]">DEMO</Badge>}
+       {!detail&&<IconButton label="帮助" onClick={()=>clearNotice()}><CircleHelp size={22}/></IconButton>}
+     </div>
+     {!detail&&!collapsed&&<div className="space-y-1 px-5 pb-4 pt-1" data-testid="mobile-expanded-title">
+       <h1 className="text-[30px] font-semibold leading-tight tracking-tight">{active.title}</h1>
+       <p className="text-sm text-muted-foreground">{pageDescriptions[page]}</p>
+     </div>}
    </header>
-   <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
+   <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" onScroll={onContentScroll} ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
      {detail?.type==='group'?<GroupDetail tag={detail.tag}/>:
       detail?.type==='json'?<JsonScreen/>:
       detail?.type==='about'?<AboutScreen/>:
