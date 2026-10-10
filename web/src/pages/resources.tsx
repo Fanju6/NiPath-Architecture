@@ -1,3 +1,5 @@
+import { NativeSelect } from '../components/ui/native-select'
+import { Input } from '../components/ui/input'
 import { ArrowDownToLine, Boxes, CalendarClock, ChevronRight, CircleAlert, CloudDownload, Copy, Globe2, Link2, Plus, RefreshCcw, Search, Server, SlidersHorizontal, Wifi } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,8 +47,8 @@ export function ResourcesPage(){
      </Card></TabsContent>
      <TabsContent value="all"><Card>
        <div className="section-head"><div><CardTitle>全部节点</CardTitle><p>按来源、名称或协议筛选</p></div><Badge tone="blue">{filtered.length} 条结果</Badge></div>
-       <div className="filter-row"><div className="searchbox"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索名称 / 协议" aria-label="搜索全部节点"/></div>
-         <label className="filter-select"><SlidersHorizontal size={16}/><select value={selectedSource} onChange={e=>setSelectedSource(e.target.value)} aria-label="选择节点来源"><option value="all">全部来源</option>{Array.from(new Set(nodes.map(n=>n.source))).map(src=><option key={src}>{src}</option>)}</select></label>
+       <div className="filter-row"><div className="searchbox"><Search size={16}/><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索名称 / 协议" aria-label="搜索全部节点"/></div>
+         <label className="filter-select"><SlidersHorizontal size={16}/><NativeSelect value={selectedSource} onChange={e=>setSelectedSource(e.target.value)} aria-label="选择节点来源"><option value="all">全部来源</option>{Array.from(new Set(nodes.map(n=>n.source))).map(src=><option key={src}>{src}</option>)}</NativeSelect></label>
        </div>
        <div className="node-table"><div className="node-table-head"><span>节点 / 地址</span><span>来源</span><span>延迟</span><span/></div>
         {filtered.map(n=><div className="node-table-row" key={n.tag}><div className="node-identity"><span className="node-flag">{n.flag}</span><div><b>{n.name}</b><small>{n.protocol} · {n.address}</small></div></div><span className="source-col">{n.source}</span><Badge tone={n.latency===null?'neutral':n.latency<100?'green':'amber'}>{latencyText(n.latency)}</Badge><button title="复制节点 tag" aria-label={'复制 '+n.tag} onClick={()=>{void navigator.clipboard?.writeText(n.tag);show('已尝试复制节点 tag')}}><Copy size={16}/></button></div>)}
@@ -55,8 +57,8 @@ export function ResourcesPage(){
      </Card></TabsContent>
    </Tabs>
    <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>添加订阅</DialogTitle><DialogDescription className="dialog-subtitle">保存订阅来源。GitHub Pages 演示中不会实际下载或解析远程内容。</DialogDescription>
-      <form className="form-stack" onSubmit={handleSubmit(submit)}><label>订阅名称<input placeholder="例如：我的订阅" {...register('name')}/>{errors.name&&<small className="field-error">{errors.name.message}</small>}</label>
-      <label>订阅地址<input placeholder="https://example.com/subscription" {...register('url')}/>{errors.url&&<small className="field-error">{errors.url.message}</small>}</label>
+      <form className="form-stack" onSubmit={handleSubmit(submit)}><label>订阅名称<Input placeholder="例如：我的订阅" {...register('name')}/>{errors.name&&<small className="field-error">{errors.name.message}</small>}</label>
+      <label>订阅地址<Input placeholder="https://example.com/subscription" {...register('url')}/>{errors.url&&<small className="field-error">{errors.url.message}</small>}</label>
       <div className="dialog-actions"><Button variant="outline" type="button" onClick={()=>setOpen(false)}>取消</Button><Button type="submit"><ArrowDownToLine size={16}/> 添加到资源（演示）</Button></div></form>
    </DialogContent></Dialog>
  </div>
