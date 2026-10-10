@@ -6,13 +6,17 @@ import {
   Route, Search, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash2, Wifi, X,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Switch } from '@/components/ui/switch'
 import { useUI, type Page } from '@/store/use-ui'
 import { latencyText, type Group } from '@/lib/demo'
-import './android.css'
 
 /**
  * Android-compact presentation, separate from the desktop shadcn dashboard.
@@ -30,36 +34,40 @@ type Detail = {type:'group'; tag:string}|{type:'json'}|{type:'about'}
 type AddKind = 'group'|'source'|'rule'|null
 
 function IconButton({label,children,onClick}: {label:string;children:React.ReactNode;onClick:()=>void}) {
- return <button type="button" className="a-icon-button" aria-label={label} onClick={onClick}>{children}</button>
+ return <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0 rounded-full" aria-label={label} onClick={onClick}>{children}</Button>
 }
 function Section({title,children}: {title:string;children:React.ReactNode}) {
- return <section className="a-section"><h2 className="a-section-label">{title}</h2><div className="a-section-body">{children}</div></section>
+ return <section className="space-y-3"><h2 className="px-1 text-sm font-semibold text-muted-foreground">{title}</h2><Card className="gap-0 divide-y overflow-hidden py-0">{children}</Card></section>
 }
 function Row({icon,iconClassName='',title,subtitle,trailing,onClick,disabled}: {
  icon:React.ReactNode;iconClassName?:string;title:string;subtitle?:string;trailing?:React.ReactNode;onClick?:()=>void;disabled?:boolean
 }) {
- const content=<><span className={'a-row-icon '+iconClassName}>{icon}</span><span className="a-row-copy"><span className="a-row-title">{title}</span>{subtitle&&<span className="a-row-subtitle">{subtitle}</span>}</span>{trailing??(onClick?<ChevronRight size={19} className="a-trailing"/>:null)}</>
- return onClick?<button className="a-row" type="button" onClick={onClick} disabled={disabled}>{content}</button>:<div className="a-row">{content}</div>
+ const content=<><span className={'grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground '+iconClassName}>{icon}</span>
+  <span className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{title}</span>
+  {subtitle&&<span className="break-words text-xs text-muted-foreground">{subtitle}</span>}</span>
+  {trailing??(onClick?<ChevronRight size={18} className="shrink-0 text-muted-foreground"/>:null)}</>
+ return onClick?<Button type="button" variant="ghost" className="h-auto min-h-16 w-full justify-start gap-3 rounded-none px-4 py-3 text-left font-normal hover:bg-accent" onClick={onClick} disabled={disabled}>{content}</Button>:
+ <div className="flex min-h-16 w-full items-center gap-3 px-4 py-3">{content}</div>
 }
 function DemoNote({children}: {children?:React.ReactNode}) {
- return <p className="a-demo-note"><CircleHelp size={16} aria-hidden="true"/>{children||'这里展示的是演示数据，没有连接真实 NiPath Core。'}</p>
+ return <Alert><CircleHelp/><AlertTitle>演示模式</AlertTitle><AlertDescription>{children||'这里展示的是演示数据，没有连接真实 NiPath Core。'}</AlertDescription></Alert>
 }
 function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
  const {demoRunning,setRunning,nodes,sources,config}=useUI()
- return <div className="a-content">
-   <div className="a-overview-greeting"><p className="a-eyebrow">NIPath · Android</p><h1>网络概览</h1><p>简单掌控，每一条连接。</p></div>
-   <section className={'a-hero '+(demoRunning?'is-connected':'')}>
-     <div className="a-hero-top"><span className="a-hero-icon"><ShieldCheck size={30} strokeWidth={1.8}/></span><span className="a-tonal-chip">{demoRunning?'模拟已连接':'模拟已停止'}</span></div>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
+   <div className="space-y-1 px-1"><p className="text-xs font-medium text-muted-foreground">NIPath · Android</p><h1 className="text-2xl font-semibold tracking-tight">网络概览</h1><p>简单掌控，每一条连接。</p></div>
+   <Card className="gap-4 bg-card py-5">
+     <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{demoRunning?'模拟已连接':'模拟已停止'}</Badge></div>
      <div><h2>{demoRunning?'保护已开启':'代理未运行'}</h2><p>Android Root · TUN / eBPF · 演示模式</p></div>
-     <button type="button" className="a-filled-action" onClick={()=>setRunning(!demoRunning)}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</button>
-     <p className="a-hero-disclaimer">此按钮仅改变页面状态，不会操作实际网络。</p>
-   </section>
-   <div className="a-metric-grid">
-     <div className="a-metric"><span><ArrowDownToLine size={17}/> 下载</span><strong>{demoRunning?'12.4':'0'} <small>MB/s</small></strong><span className="a-metric-caption">模拟实时速度</span></div>
-     <div className="a-metric"><span><ArrowUpFromLine size={17}/> 上传</span><strong>{demoRunning?'2.6':'0'} <small>MB/s</small></strong><span className="a-metric-caption">模拟实时速度</span></div>
+     <Button type="button" size="lg" className="mx-5 w-[calc(100%-40px)]" onClick={()=>setRunning(!demoRunning)}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
+     <p className="px-5 text-xs text-muted-foreground">此按钮仅改变页面状态，不会操作实际网络。</p>
+   </Card>
+   <div className="grid grid-cols-2 gap-3">
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine size={16}/> 下载</span><strong className="text-2xl tabular-nums">{demoRunning?'12.4':'0'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">模拟实时速度</span></Card>
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine size={16}/> 上传</span><strong className="text-2xl tabular-nums">{demoRunning?'2.6':'0'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">模拟实时速度</span></Card>
    </div>
-   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle="仅为演示数值" trailing={<span className="a-row-value">{demoRunning?'132':'0'}</span>}/>
-   <Row icon={<Network size={21}/>} title="策略组" subtitle="JSON 配置定义" trailing={<span className="a-row-value">{config.outbounds.length}</span>}/></Section>
+   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle="仅为演示数值" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{demoRunning?'132':'0'}</span>}/>
+   <Row icon={<Network size={21}/>} title="策略组" subtitle="JSON 配置定义" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{config.outbounds.length}</span>}/></Section>
    <Section title="常用操作">
      <Row icon={<Globe2 size={21}/>} title="代理策略" subtitle="切换节点，查看测速" onClick={()=>navigate('proxies')}/>
      <Row icon={<HardDrive size={21}/>} title="订阅资源" subtitle={sources.length+' 个订阅 · '+nodes.length+' 个示例节点'} onClick={()=>navigate('resources')}/>
@@ -71,9 +79,9 @@ function ProxiesScreen({openGroup,onAdd}: {openGroup:(tag:string)=>void;onAdd:()
  const {config,selected,nodes}=useUI()
  const [search,setSearch]=React.useState('')
  const groups=config.outbounds.filter(g=>g.tag.toLowerCase().includes(search.toLowerCase()))
- return <div className="a-content">
-   <div className="a-screen-lead"><h1>代理</h1><p>选择策略组，管理节点与自动分流。</p></div>
-   <label className="a-search"><Search size={20}/><span className="sr-only">搜索策略组</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组"/></label>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
+   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">代理</h1><p>选择策略组，管理节点与自动分流。</p></div>
+   <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索策略组" value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组"/></div>
    <Section title={'策略组 · '+config.outbounds.length}>
     {groups.map(g=>{
      const current=nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]
@@ -81,70 +89,67 @@ function ProxiesScreen({openGroup,onAdd}: {openGroup:(tag:string)=>void;onAdd:()
      return <Row key={g.tag} icon={g.type==='selector'?<Network size={21}/>:g.type==='urltest'?<Activity size={21}/>:<Layers3 size={21}/>}
        title={g.tag} subtitle={secondary} onClick={()=>openGroup(g.tag)} />
     })}
-    {!groups.length&&<div className="a-empty">没有匹配的策略组</div>}
+    {!groups.length&&<div className="p-6 text-center text-sm text-muted-foreground">没有匹配的策略组</div>}
    </Section>
    <DemoNote>策略组数据来自同一份演示 JSON；当前选择并非真实出口。</DemoNote>
-   <button type="button" className="a-fab" onClick={onAdd} aria-label="添加策略组"><Plus size={23}/></button>
+   <Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="添加策略组"><Plus size={23}/></Button>
  </div>
 }
 function GroupDetail({tag}: {tag:string}) {
  const {config,nodes,selected,selectNode,show,removeGroup}=useUI()
  const g=config.outbounds.find(x=>x.tag===tag)
  const [search,setSearch]=React.useState('')
- if(!g)return <div className="a-content a-empty">策略组不存在</div>
+ if(!g)return <div className="p-6 text-center text-sm text-muted-foreground">策略组不存在</div>
  const isManual=g.type==='selector'
  const members=g.outbounds.filter(id=>id.toLowerCase().includes(search.toLowerCase())||nodes.some(n=>n.tag===id&&n.name.toLowerCase().includes(search.toLowerCase())))
- return <div className="a-content a-detail-content">
-   <div className="a-detail-summary"><span className="a-detail-icon"><Network size={26}/></span><h1>{g.tag}</h1><p>{isManual?'手动选择':g.type==='urltest'?'自动测速':'负载均衡'} · {g.outbounds.length} 个候选</p></div>
-   <div className="a-info-panel"><span>{isManual?'已选节点（演示）':g.type==='urltest'?'测速策略':'连接分配策略'}</span><strong>{isManual?(nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]||'暂无选择'):g.type==='urltest'?'自动选择最佳出口':g.strategy||'按连接调度'}</strong></div>
-   <label className="a-search"><Search size={20}/><span className="sr-only">搜索成员</span><input placeholder="搜索候选节点" value={search} onChange={e=>setSearch(e.target.value)}/></label>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
+   <div className="flex flex-col items-center gap-2 py-4 text-center"><span className="grid size-14 place-items-center rounded-xl bg-muted text-foreground"><Network size={26}/></span><h1 className="text-2xl font-semibold tracking-tight">{g.tag}</h1><p>{isManual?'手动选择':g.type==='urltest'?'自动测速':'负载均衡'} · {g.outbounds.length} 个候选</p></div>
+   <Card className="gap-2 p-4"><span className="text-xs text-muted-foreground">{isManual?'已选节点（演示）':g.type==='urltest'?'测速策略':'连接分配策略'}</span><strong className="text-base font-semibold">{isManual?(nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]||'暂无选择'):g.type==='urltest'?'自动选择最佳出口':g.strategy||'按连接调度'}</strong></Card>
+   <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索成员" placeholder="搜索候选节点" value={search} onChange={e=>setSearch(e.target.value)}/></div>
    <Section title="候选节点">
     {members.map(id=>{const node=nodes.find(n=>n.tag===id),chosen=isManual&&selected[g.tag]===id;return <Row key={id} icon={<Globe2 size={21}/>} title={node?node.flag+' '+node.name:id}
       subtitle={(node?.source||'其他出站')+' · '+(node?latencyText(node.latency):'嵌套策略组')}
-      trailing={isManual?(chosen?<span className="a-row-selected"><Check size={18}/></span>:<span className="a-row-value">选择</span>):<span className="a-row-value">自动</span>}
+      trailing={isManual?(chosen?<span className="grid size-7 place-items-center rounded-full bg-secondary text-secondary-foreground"><Check size={18}/></span>:<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">选择</span>):<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">自动</span>}
       onClick={()=>isManual?selectNode(g.tag,id):show('此组由内核自动选择，不能手动指定全局出口')}/>})}
-    {!members.length&&<div className="a-empty">暂无候选成员</div>}
+    {!members.length&&<div className="p-6 text-center text-sm text-muted-foreground">暂无候选成员</div>}
    </Section>
-   <button type="button" className="a-outline-action" onClick={()=>show('演示：未连接真实 sing-box URLTest RPC')}><RefreshCw size={18}/> 测试节点延迟</button>
-   {g.tag!=='默认代理'&&<button type="button" className="a-danger-link" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组（演示）</button>}
+   <Button variant="outline" size="lg" className="w-full" onClick={()=>show('演示：未连接真实 sing-box URLTest RPC')}><RefreshCw size={18}/> 测试节点延迟</Button>
+   {g.tag!=='默认代理'&&<Button variant="destructive" size="sm" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组（演示）</Button>}
    <DemoNote>{g.type==='load-balance'?'负载均衡不存在全局选中的固定节点。':'节点选择与延迟均为演示，不代表真实连接。'}</DemoNote>
  </div>
 }
 function ResourcesScreen({onAdd}: {onAdd:()=>void}) {
  const {sources,nodes,refreshSource}=useUI()
  const [tab,setTab]=React.useState<'sources'|'nodes'>('sources')
- return <div className="a-content">
-   <div className="a-screen-lead"><h1>资源</h1><p>订阅和节点统一管理。</p></div>
-   <div className="a-segmented" role="tablist" aria-label="资源类型">
-     <button type="button" role="tab" aria-selected={tab==='sources'} className={tab==='sources'?'active':''} onClick={()=>setTab('sources')}>订阅 · {sources.length}</button>
-     <button type="button" role="tab" aria-selected={tab==='nodes'} className={tab==='nodes'?'active':''} onClick={()=>setTab('nodes')}>节点 · {nodes.length}</button>
-   </div>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
+   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">资源</h1><p>订阅和节点统一管理。</p></div>
+   <Tabs value={tab} onValueChange={v=>setTab(v as 'sources'|'nodes')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="sources">订阅 · {sources.length}</TabsTrigger><TabsTrigger value="nodes">节点 · {nodes.length}</TabsTrigger></TabsList></Tabs>
    {tab==='sources'?<Section title="订阅列表">
-    {sources.map(s=><div className="a-source" key={s.id}>
-      <div className="a-source-top"><div className="a-row-icon"><Globe2 size={21}/></div><div className="a-row-copy"><strong className="a-row-title">{s.name}</strong><span className="a-row-subtitle">{s.count} 个节点 · {s.traffic}</span></div><button className="a-icon-button" aria-label={'刷新'+s.name} onClick={()=>refreshSource(s.id)}><RefreshCw size={19}/></button></div>
-      <div className="a-source-foot"><span>{s.updated}</span><span className="a-status-chip">{s.status==='applied'?'已生效（演示）':s.status==='failed'?'更新失败':'等待内核确认'}</span></div>
+    {sources.map(s=><div className="space-y-3 px-4 py-4" key={s.id}>
+      <div className="flex items-center gap-3"><div className="a-row-icon"><Globe2 size={21}/></div><div className="flex min-w-0 flex-1 flex-col gap-1"><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></div><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>refreshSource(s.id)}><RefreshCw size={18}/></Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-xs text-muted-foreground"><span>{s.updated}</span><Badge variant="outline">{s.status==='applied'?'已生效（演示）':s.status==='failed'?'更新失败':'等待内核确认'}</Badge></div>
     </div>)}
-    </Section>:<Section title="节点列表">{nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="a-row-value">{latencyText(n.latency)}</span>}/>)}</Section>}
+    </Section>:<Section title="节点列表">{nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{latencyText(n.latency)}</span>}/>)}</Section>}
    <DemoNote>订阅刷新后需要内核明确回执，不能将下载完成误报为已生效。</DemoNote>
-   <button type="button" className="a-fab" onClick={onAdd} aria-label="添加订阅"><Plus size={23}/></button>
+   <Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="添加订阅"><Plus size={23}/></Button>
  </div>
 }
 function RulesScreen({onAdd}: {onAdd:()=>void}) {
  const {config,toggleRule,show}=useUI()
  const [tab,setTab]=React.useState<'route'|'dns'>('route')
- return <div className="a-content">
-   <div className="a-screen-lead"><h1>规则</h1><p>管理路由与 DNS 规则。</p></div>
-   <div className="a-segmented" role="tablist" aria-label="规则类型"><button type="button" role="tab" aria-selected={tab==='route'} className={tab==='route'?'active':''} onClick={()=>setTab('route')}>路由规则</button><button type="button" role="tab" aria-selected={tab==='dns'} className={tab==='dns'?'active':''} onClick={()=>setTab('dns')}>DNS 规则</button></div>
-   {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="a-rule" key={r.id}><div className="a-row-copy"><span className="a-row-title">{r.match}</span><span className="a-row-subtitle">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
+   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">规则</h1><p>管理路由与 DNS 规则。</p></div>
+   <Tabs value={tab} onValueChange={v=>setTab(v as 'route'|'dns')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="route">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger></TabsList></Tabs>
+   {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}><div className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{r.match}</span><span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
     <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="当前演示配置暂无 DNS 规则" onClick={()=>show('DNS 规则未来将直接读取原生 JSON')}/></Section>}
    <DemoNote>这里只对演示 JSON 进行修改，未进行真实路由命中与配置校验。</DemoNote>
-   {tab==='route'&&<button type="button" className="a-fab" onClick={onAdd} aria-label="新增路由规则"><Plus size={23}/></button>}
+   {tab==='route'&&<Button type="button" variant="secondary" size="icon" className="fixed bottom-[calc(93px+env(safe-area-inset-bottom))] right-5 z-20 size-14 rounded-xl border shadow-md" onClick={onAdd} aria-label="新增路由规则"><Plus size={23}/></Button>}
  </div>
 }
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
  const {theme,setTheme,revision,show}=useUI()
- return <div className="a-content">
-   <div className="a-screen-lead"><h1>设置</h1><p>NiPath 的偏好和运行参数。</p></div>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
+   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">设置</h1><p>NiPath 的偏好和运行参数。</p></div>
    <Section title="个性化"><Row icon={theme==='dark'?<Moon size={21}/>:<Sun size={21}/>} title="深色主题" subtitle="跟随 NiPath 当前显示设置"
      trailing={<Switch checked={theme==='dark'} onCheckedChange={v=>setTheme(v?'dark':'light')} aria-label="深色主题"/>}/></Section>
    <Section title="内核与配置">
@@ -163,20 +168,20 @@ function JsonScreen(){
  const [raw,setRaw]=React.useState(()=>JSON.stringify(config,null,2))
  const [error,setError]=React.useState('')
  function save(){const r=setRawConfig(raw);setError(r.ok?'':r.error||'配置无效');if(r.ok)show('演示 JSON 已写入本地状态，未应用到真实内核')}
- return <div className="a-content a-detail-content">
-   <div className="a-screen-lead"><h1>原生配置</h1><p>配置修订 {revision} · 演示 JSON 编辑器</p></div>
-   <div className="a-info-panel"><strong>单一配置事实源</strong><span>这里不会创建第二套规则或策略组数据。</span></div>
-   <Textarea className="a-json" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false} aria-label="原生 JSON 配置"/>
-   {error&&<p className="a-error" role="alert">{error}</p>}
-   <button type="button" className="a-filled-action" onClick={save}><CheckCheck size={18}/> 保存演示配置</button>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
+   <div className="space-y-1 px-1"><h1 className="text-2xl font-semibold tracking-tight">原生配置</h1><p>配置修订 {revision} · 演示 JSON 编辑器</p></div>
+   <Card className="gap-2 p-4"><strong className="text-sm">单一配置事实源</strong><span className="text-xs text-muted-foreground">这里不会创建第二套规则或策略组数据。</span></Card>
+   <Textarea className="min-h-[55dvh] font-mono text-xs leading-6" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false} aria-label="原生 JSON 配置"/>
+   {error&&<p className="text-sm text-destructive" role="alert">{error}</p>}
+   <Button className="w-full" size="lg" onClick={save}><CheckCheck size={18}/> 保存演示配置</Button>
    <DemoNote>并非完整 sing-box Schema，也不会实际应用到内核。</DemoNote>
  </div>
 }
 function AboutScreen(){
- return <div className="a-content a-detail-content"><div className="a-about-icon"><Network size={35}/></div><h1 className="a-about-title">NiPath</h1><p className="a-about-caption">奶屁 · NP</p>
- <Section title="应用信息"><Row icon={<ShieldCheck size={21}/>} title="产品目标版本" trailing={<span className="a-row-value">1.0.0</span>}/>
- <Row icon={<Code2 size={21}/>} title="当前客户端" trailing={<span className="a-row-value">WebUI 演示版</span>}/></Section>
- <a className="a-outline-action" href="https://github.com/Fanju6/NiPath-Architecture" target="_blank" rel="noreferrer">GitHub 架构仓库 <ArrowRight size={18}/></a>
+ return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5"><div className="mx-auto mt-7 grid size-16 place-items-center rounded-xl bg-muted"><Network size={35}/></div><h1 className="text-center text-3xl font-semibold">NiPath</h1><p className="text-center text-sm text-muted-foreground">奶屁 · NP</p>
+ <Section title="应用信息"><Row icon={<ShieldCheck size={21}/>} title="产品目标版本" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">1.0.0</span>}/>
+ <Row icon={<Code2 size={21}/>} title="当前客户端" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">WebUI 演示版</span>}/></Section>
+ <Button asChild variant="outline"><a href="https://github.com/Fanju6/NiPath-Architecture" target="_blank" rel="noreferrer">GitHub 架构仓库 <ArrowRight size={18}/></a></Button>
  </div>
 }
 function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)=>void}) {
@@ -203,15 +208,14 @@ function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)
   close()
  }
  return <Sheet open={kind!==null} onOpenChange={o=>{if(!o)close()}}>
-    <SheetContent side="bottom" className="a-bottom-sheet" showCloseButton={false}>
-      <div className="a-sheet-handle" aria-hidden="true"/>
+    <SheetContent side="bottom" className="max-h-[90dvh] gap-4 overflow-y-auto rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]" showCloseButton={false}>
       <SheetHeader><SheetTitle>{kind==='group'?'新建策略组':kind==='source'?'添加订阅':'新增路由规则'}</SheetTitle><SheetDescription>这是本地演示操作，不会控制真实内核。</SheetDescription></SheetHeader>
-      <div className="a-sheet-form">
-       <label className="a-field-label">{kind==='rule'?'匹配条件':kind==='source'?'订阅名称':'策略组名称'}<Input value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='rule'?'domain_suffix: example.com':kind==='source'?'我的订阅':'媒体代理'}/></label>
-       {kind==='source'&&<label className="a-field-label">订阅 URL<Input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com/sub"/></label>}
-       {kind==='group'&&<><label className="a-field-label">组类型<NativeSelect value={groupType} onChange={e=>setGroupType(e.target.value as Group['type'])}><option value="selector">手动选择</option><option value="urltest">自动测速</option><option value="load-balance">负载均衡</option></NativeSelect></label><label className="a-field-label">候选成员 tag<Textarea value={members} onChange={e=>setMembers(e.target.value)} placeholder="输入一个或多个成员，用换行分隔"/></label></>}
-       {kind==='rule'&&<label className="a-field-label">目标出站<NativeSelect value={outbound} onChange={e=>setOutbound(e.target.value)}><option value="direct">direct</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}</NativeSelect></label>}
-       <div className="a-sheet-actions"><button className="a-outline-action" type="button" onClick={close}>取消</button><button className="a-filled-action" type="button" onClick={submit}>确认添加</button></div>
+      <div className="space-y-4 px-1">
+       <label className="flex flex-col gap-2 text-sm font-medium">{kind==='rule'?'匹配条件':kind==='source'?'订阅名称':'策略组名称'}<Input value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='rule'?'domain_suffix: example.com':kind==='source'?'我的订阅':'媒体代理'}/></label>
+       {kind==='source'&&<label className="flex flex-col gap-2 text-sm font-medium">订阅 URL<Input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com/sub"/></label>}
+       {kind==='group'&&<><label className="flex flex-col gap-2 text-sm font-medium">组类型<NativeSelect value={groupType} onChange={e=>setGroupType(e.target.value as Group['type'])}><option value="selector">手动选择</option><option value="urltest">自动测速</option><option value="load-balance">负载均衡</option></NativeSelect></label><label className="flex flex-col gap-2 text-sm font-medium">候选成员 tag<Textarea value={members} onChange={e=>setMembers(e.target.value)} placeholder="输入一个或多个成员，用换行分隔"/></label></>}
+       {kind==='rule'&&<label className="flex flex-col gap-2 text-sm font-medium">目标出站<NativeSelect value={outbound} onChange={e=>setOutbound(e.target.value)}><option value="direct">direct</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}</NativeSelect></label>}
+       <div className="grid grid-cols-2 gap-3 pt-1"><Button type="button" variant="outline" size="lg" onClick={close}>取消</Button><Button type="button" size="lg" onClick={submit}>确认添加</Button></div>
       </div>
     </SheetContent>
    </Sheet>
