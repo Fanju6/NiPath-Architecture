@@ -12,6 +12,8 @@
 - 🔬 [成熟开源项目源码对标与实施细化（2026-10）](research/2026-10-open-source-architecture-benchmark.md)
 - 🧩 [sing-box 核心源码与 reF1nd Provider 深度审查](research/2026-10-sing-box-core-source-audit.md)
 - 🕰️ [历次架构修订](versions/)
+- 🎨 [WebUI 五页面视觉与交互规范（Design v1.0）](design/NiPath-WebUI-Design-v1.0.md)
+- 🖥️ [WebUI 可交互原型（独立 HTML，可保存后浏览器打开）](design/prototypes/nipath-webui-v1.0.html)
 - 📝 [修订记录](CHANGELOG.md)
 - 🤝 [参与贡献](CONTRIBUTING.md)
 - 💬 [发起架构讨论](https://github.com/Fanju6/NiPath-Architecture/issues/new/choose)
