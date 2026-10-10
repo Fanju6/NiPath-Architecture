@@ -400,15 +400,16 @@ export default function AndroidApp(){
        })}
      </nav>}
      <div className="min-h-0 min-w-0 flex-1">
-       {detail?<main className="h-full overflow-y-auto overscroll-contain" data-testid="mobile-detail-content" key={detail.type==='group'?detail.tag:detail.type}>
-         {detail.type==='group'?<GroupDetail tag={detail.tag}/>:
-          detail.type==='json'?<JsonScreen/>:<AboutScreen/>}
-       </main>:destinations.map(item=><main key={item.id}
+       {destinations.map(item=><main key={item.id}
           data-testid={'mobile-page-'+item.id}
           aria-label={item.title+'页面'}
-          className={page===item.id?'h-full overflow-y-auto overscroll-contain':'hidden h-full overflow-y-auto overscroll-contain'}>
+          className={!detail&&page===item.id?'h-full overflow-y-auto overscroll-contain':'hidden h-full overflow-y-auto overscroll-contain'}>
          {showScreen(item.id)}
        </main>)}
+       {detail&&<main className="h-full overflow-y-auto overscroll-contain" data-testid="mobile-detail-content" key={detail.type==='group'?detail.tag:detail.type}>
+         {detail.type==='group'?<GroupDetail tag={detail.tag}/>:
+          detail.type==='json'?<JsonScreen/>:<AboutScreen/>}
+       </main>}
      </div>
    </div>
    {!detail&&<nav className="grid shrink-0 grid-cols-5 gap-1 border-t bg-background px-2 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2 min-[600px]:hidden" aria-label="底部主导航">
