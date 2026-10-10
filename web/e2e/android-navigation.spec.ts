@@ -29,7 +29,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByTestId('mobile-collapsed-title')).toHaveCount(0)
   await expect(appBar.getByText('服务状态与实时流量')).toHaveCount(0)
   // Scrolling must not change the fixed small-title app bar.
-  const content = page.locator('main')
+  const content = page.getByTestId('mobile-page-overview')
   await content.evaluate(node => { node.scrollTop = 120 })
   await expect(title).toHaveText('概览')
   await expect(title).toBeVisible()
