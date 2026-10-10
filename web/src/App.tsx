@@ -273,7 +273,7 @@ function AppContent(){
    {notice&&<div className="fixed bottom-5 right-5 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-md border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg" role="status"><span>{notice}</span><Button size="sm" variant="ghost" onClick={clearNotice}>关闭</Button></div>}
  </SidebarInset>
 }
-// Material 3 navigation bar for compact Android/mobile windows; dashboard remains on larger screens.
+// Android-native interaction patterns with the same shadcn/ui visual components as desktop.
 const compactQuery = '(max-width: 839px)'
 const getCompact = () => window.matchMedia(compactQuery).matches
 const listenCompact = (notify: () => void) => {
@@ -283,7 +283,13 @@ const listenCompact = (notify: () => void) => {
 }
 function ThemeSync() {
   const theme = useUI(s => s.theme)
+  const checkCore = useUI(s => s.checkCore)
   React.useEffect(() => { document.documentElement.classList.toggle('dark', theme === 'dark') }, [theme])
+  React.useEffect(() => {
+    void checkCore()
+    const handle = window.setInterval(() => { void checkCore() }, 15_000)
+    return () => window.clearInterval(handle)
+  }, [checkCore])
   return null
 }
 export default function App(){
