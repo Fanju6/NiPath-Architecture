@@ -32,7 +32,10 @@ jobs:
       - name: Install packages
         working-directory: web
         run: |
-          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+          # During the UI primitive dependency migration, update the lockfile
+          # deterministically and let CI commit it with the generated site.
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --no-audit --no-fund
       - name: Build React application
         working-directory: web
         env:
