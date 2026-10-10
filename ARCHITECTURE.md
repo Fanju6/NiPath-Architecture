@@ -1,6 +1,6 @@
 # NiPath 1.0 — 全新架构设计与实施规范
 
-> **架构文档修订：** 1.4（开源实现对标与工程落地规范）  
+> **架构文档修订：** 1.5（sing-box 锁定版本源码审查与 Provider 复用优化）  
 > **产品初始发行版本：** 1.0.0（目标版本，尚未发布）  
 > **品牌：** NiPath（奶屁，简称 NP）  
 > **制定日期：** 2026-10-10  
@@ -79,7 +79,7 @@ sing-box 引擎（运行时实际选中、测速、最终出站）
 | 内部生成节点标识 | `np/node/...` | NP 前缀可保持短小，避免直接拿节点展示名作为引用键 |
 | WebUI / 本机 HTTP API | `NiPath WebUI` / `NiPath Core API` | 仍为同一 Core 提供的一套页面与 API |
 
-**版本号约定：** `NiPath 1.0.0` 指产品发行版本；本文件的 `v1.4` 指**架构文档修订版本**，两者互不等同。Git 仓库对文档变更单独打标签，不代表产品已发行。
+**版本号约定：** `NiPath 1.0.0` 指产品发行版本；本文件的 `v1.5` 指**架构文档修订版本**，两者互不等同。Git 仓库对文档变更单独打标签，不代表产品已发行。
 
 **名称检查：** 品牌选择已确认，但仓库名、软件包名、域名及商标仍需在正式发行前做占用与法律层面的检查；不能把候选命名误写成已获得注册权利。
 
@@ -146,7 +146,7 @@ flowchart TB
 | Profile | 可选的完整原生配置档案与当前活动档案切换；每个活动档案只有一份原生 JSON | 档案文件 + 活动档案指针 |
 | Resource / Catalog | 统一节点实体、来源归属、手动节点、查询与元数据；不负责决定当前代理出口 | Core DB（Source / Node） |
 | Subscription | 获取、转换、更新、有效性检验与来源快照提交 | Core DB（Subscription / Source） |
-| Group Projection | 从 `outbounds` 读取 `selector` / `urltest`，解析 Provider / 节点及嵌套关系，生成 UI 只读投影与诊断 | sing-box 用户 JSON（定义）+ Catalog（成员）+ 引擎 API（运行态） |
+| Group Projection | 从 `outbounds` 读取 `selector` / `urltest` / 所选 fork 支持的 `load-balance`，解析 Provider / 节点及嵌套关系，生成 UI 只读投影与诊断 | sing-box 用户 JSON（定义）+ Catalog（成员）+ 引擎 API（运行态） |
 | Routing | 可视化编辑同一 JSON 内的 `route`、`dns`、`rule_set`，验证所引用的 outbound tag | sing-box 用户 JSON |
 | Runtime | 服务状态机、运行计划、启动/停止/重载、故障恢复 | 运行时状态机 + OS/引擎观测 |
 | Telemetry（可选） | 本地运行统计、诊断导出 | 隔离存储；默认不上传外部服务 |
@@ -240,6 +240,38 @@ FlClash 的生命周期机制作为**设计证据**，不是可直接移植的�
 
 **首次运行：** 可从模板初始化一份带有 `Proxy` / `Auto` / `direct` 等出站的原生 JSON；这是一次性创建文件，不是页面内固定策略组，也不会按每份订阅自动产生 `Auto/<订阅>` / `Select/<订阅>`。
 
+### 3.6 锁定 sing-box 引擎版本与原生能力复用（v1.5）
+
+本节以 [当前 NetProxy go.mod](https://github.com/Fanju6/NetProxy-Magisk/blob/main/src/native/netproxy/go.mod) 对应的 reF1nd/sing-box **`v1.15.0-alpha.11-reF1nd` 标签**为可核查参考，而不是把上游 `SagerNet/sing-box/testing` 视为相同代码。该标签定位 commit `78ea0ce9257bd3bedd4d1185d6cc4723f04096b4`；**NiPath 首次实际构建时需重新锁定引擎提交**。
+
+**已经从锁定标签确认存在的能力：**
+
+- [原生 Provider](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/option/provider.go)：local/remote/inline、健康检查、原生参数覆盖。
+- [订阅解析器](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/provider/parser/parser.go)：sing-box、Clash、SIP008、Raw 等解析途径；具体协议格式仍要用真实样本测。
+- [Local Provider 热更新](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/provider/local/lcoal.go)：文件变更回调调用 `ParseSubscription → UpdateNodes → UpdateGroups`，可以在不改变静态组定义的情况下更新成员。
+- [分组原生定义](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/option/group.go)：`outbounds/providers/use_all_providers/include/exclude`；Selector、URLTest 与 fork 特有的 LoadBalance。
+- [LoadBalance](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/protocol/group/loadbalance.go)：`round-robin` / `consistent-hashing` / `sticky-sessions`，由数据面按连接选择出口。
+
+**实现约束：**
+
+1. **先复用，后扩展。** NiPath Go Core 管理资源、配置事务、权限与平台；尽可能复用原生 Provider 的节点实例、订阅解析、动态成员、测速与连接级 LB，不自行维护同等能力的第二套运行引擎。
+2. **只能有一个订阅下载 owner。** 备选 A：Core 下载与验证，使用 local Provider 消费快照并热更新；备选 B：配置中的 remote Provider 由 sing-box 下载，Core 的资源页仅做索引/状态投影。**A 为优先原型，B 为对照实验**；最终 Source 的数据库/JSON 写入权属须 P0 ADR 确认，不允许两边同时下载同一订阅。
+3. **先证实热更新再承诺无重启。** 本地文件 watcher 不是“已应用成功”的确认；必须验证写入后引擎的实际节点 revision、失败信息、现有连接及分组成员变化。
+4. **避免双份 Catalog。** 用户看到的「资源」页面可以保留 Catalog 名称和统一查询，但节点实例只能在引擎 Provider 中有一份有效运行权威；Catalog 若保存可搜索节点元数据，不得另造不同于引擎的在线节点真相。
+5. **协议/schema 固定在同一引擎构建。** 记录源 fork、tag、commit、go module sum、schema hash、proto hash 与构建特性。升级 fork 必须经过差异/回归测试，不承诺任意 upstream 自动兼容。
+
+### 3.7 Provider 热更新不是原子提交（代码级安全约束）
+
+[adapter/provider/update.go](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/adapter/provider/update.go) 是逐节点拓扑排序和 `Replace`：失败时可能保留旧节点，同时其他节点已更新或删除，并最终返回错误。因此 **Provider 局部更新成功不意味着整批订阅原子成功**。
+
+NiPath 资源更新必须至少区分 `fetched / parsed / validated / staged / applying / applied / partially_applied / failed`；无引擎 ACK 时仅能显示“资源已提交，生效待确认”。在故障状态下不能错误宣布“全部节点已刷新”。
+
+- 推荐通过 staging、校验、校验和与原子替换减少损坏文件风险；但**原子文件替换只保证文件一致性，不保证动态节点应用是原子的**。
+- 更新后按 source/provider revision 与 Engine 快照核对；无法取得权威应用回执时标明不确定性，并可考虑向 fork 增加最小可读的更新状态/事件接口。
+- 检查同名节点发生 `(2)` 等自动 tag 后缀时的稳定身份问题；Core 应使用稳定来源 ID / 节点 ID，不依赖订阅内顺序。
+- 源/组筛选的 `include/exclude` 正则作用于**完整的 Provider 节点 tag**，不是纯展示名；筛选编辑器需要作用范围解释、预览与错误提示，防止来源前缀误命中。
+- 组成员为空、Provider 失败或 `Compatible` fallback 情况**禁止未经用户明确配置就静默直连**；要在 P0 中核查实际 fallback/默认出站类型及无节点运行行为。
+
 ## 4. 全新持久化设计
 
 ### 4.1 默认选择
@@ -328,6 +360,16 @@ GET    /api/platform/capabilities
 ```
 
 错误 `code` 稳定、`message` 面向用户、`details` 面向诊断；敏感详细错误不能直接原样暴露给网页。
+
+#### 5.1.2 锁定 fork 的真实 API 语义（v1.5）
+
+所核对 `reF1nd/sing-box v1.15.0-alpha.11-reF1nd` 的 [daemon/started_service.go](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/daemon/started_service.go) 中 `APIVersion=6`；上游 `SagerNet/sing-box/testing` 在本次查看时为 `4`。两者属于不同开发基线，**API 版本数字大小不构成兼容性保证**，应以 proto + 能力检测为准。
+
+- `SubscribeGroups` 的 `readGroups` 跳过没有实际 `GroupItem` 的空组：**停机和空组情况下页面仍应以唯一用户 JSON 展示静态定义**。
+- `Group.Selected` 使用 `Selected(TCP)` 取值；fork 的 URLTest 另维护 UDP 选择，`load-balance.Selected()` 返回 nil，因为它按连接调度。不能把所有组都绘制成“当前选中一个固定节点”。
+- `URLTest` RPC 会异步发起实际检测，返回成功不代表探测完成。测速按钮的完成反馈以更新后的观测时间、结果或明确进度事件为依据。
+- 目前所审查的 gRPC StartedService 未见完整的 Provider 订阅 CRUD/更新时间/配额查询接口。**不要把 sing-box Runtime API 当作 NiPath「资源」业务 API**，需要保留 Core 的独立资源查询与状态投影。
+- Engine Adapter 仅提供锁定版本具备的调用；给每个操作返回 capability、session generation 与真实结果，而不是静默降级或使用旧版 Clash API 伪造新功能。
 
 ### 5.2 API 身份与授权
 
@@ -730,6 +772,21 @@ GET    /api/events                          # SSE：config/catalog/runtime/test
 - 订阅变化只更新 Catalog 和派生 Provider、有效配置/运行态版本，**不自动创建来源对应的 Auto/Select 策略组**。
 - 参考 [FlClash 策略组组件](https://github.com/chen08209/FlClash/blob/main/lib/views/dashboard/widgets/proxy_groups.dart)：长列表虚拟化、当前选中项自动定位、测试进度按实际并发显示、键盘操作与触控反馈；首发不需要复杂仪表盘拖拽器。
 
+### 7.12 对不同策略组分别展示，不伪造“当前节点”（v1.5）
+
+根据锁定 fork 的 `option/group.go` 和实现文件，代理页需要做**类型感知的 UI**：
+
+| 组类型 | 应展示 | 不能推定 |
+|---|---|---|
+| `selector` | 候选、手动选择、上次缓存选择、默认选项与当前引擎回报 | 没启动时“当前已生效” |
+| `urltest` | 自动选择、测速新鲜度、TCP 出口；有可靠能力时显示 UDP 差异 | TCP / UDP 一定相同 |
+| `urltest` + `fallback` | `fallback.enabled/max_delay` 与成员优先顺序 | 一定具备独立名为 `fallback` 的 outbound 类型 |
+| `load-balance` | 三种策略、候选健康、TTL 与连接级代理路径 | 存在全局选中节点、单连接聚合多线路带宽 |
+
+参见源码 [LoadBalance.Selected()](https://github.com/reF1nd/sing-box/blob/v1.15.0-alpha.11-reF1nd/protocol/group/loadbalance.go)：它明确返回 nil；可用成员/连接级统计应靠运行时流与连接信息展示。
+
+资源页面订阅卡片同样应分别显示**下载成功**和**内核运行态生效**。配置静态组与动态组不一致时要显示差异/错误而不是把组隐藏，配置的权属仍然只有一份原生 JSON，且没有所谓“高级模式”。
+
 ## 8. Tauri 2：只做可选原生外壳
 
 ### 8.1 唯一职责
@@ -1102,6 +1159,22 @@ OS 网络与文件系统              ← 最小权限、明确边界
 
 **E08 的“开发隔离模式”只属于测试与工程环境**，不是用户侧 Managed/Expert 配置模式；不允许把双模式重新引入产品。通过真实实验之前，不以截图、理论可行性或不同内核版本的测试代替结论。
 
+### P0 附加验证门槛：锁定 sing-box 源码 E11–E17（v1.5）
+
+实施依据：[锁定 reF1nd fork 的源码深度审查](research/2026-10-sing-box-core-source-audit.md)。
+
+| 实验 | 验收目标 |
+|---|---|
+| E11 单一下载 owner | A：Core → Local Provider；B：Native Remote Provider；比较刷新数、热更新行为、配额/元数据与唯一数据源 |
+| E12 Local Provider 热更新 | 文件原子替换、watch 丢事件、连接保留、增删/改名、损坏文件、Core 与引擎重启 |
+| E13 部分节点失败 | `Replace` 局部错误时源/组/连接/状态投影一致性及恢复策略 |
+| E14 组真实语义 | Selector 选择缓存、URLTest TCP/UDP、fallback 优先、LB 连接级策略、空组/Compatible 行为 |
+| E15 API 与 proto | 精确 fork 的 `APIVersion` 与 proto/schema hash，空组、异步测速、缺失资源 RPC 的扩展边界 |
+| E16 无损配置编辑 | 注释、原生扩展字段、生成 tag 稳定性、并发 revision、未知字段拒绝与错误定位 |
+| E17 资源压力 | 多订阅/1000 节点、后台更新、连接中更新、内存/CPU/耗电/吞吐基准 |
+
+**约束：** 对 P0 尚未验证的运行时热更新/源权属，不擅自宣称决定已实现；达不到验证标准就把改动推迟到下一轮，而不是牺牲安全与简单性。
+
 ### P1 — 领域模型与 Core 基础
 
 - 定义 Source、Catalog Node、Subscription、Runtime 与单一 sing-box JSON 事务模型；Group/Rule 仅为 JSON 的只读/可受控编辑投影，不建立独立持久表。
@@ -1232,6 +1305,12 @@ OS 网络与文件系统              ← 最小权限、明确边界
 | ADR-023 | React 原生桥和服务调用集中入口，以 CI 架构门禁执行 | **设计原则确定，E06/E10 验证** |
 | ADR-024 | Android VpnService FD 由平台 Service 持有，libbox 经验证桥接接管；防回环、撤销/失败清理 | **首选，E04 验证** |
 | ADR-025 | 对 sing-box 1.15+ TUN 使用新默认栈方案，避免固化弃用的 stack 参数 | **待当前 fork 版本验证** |
+| ADR-026 | 引擎功能按确定 tag+commit 锁定，proto/schema/能力与真实构建一致，不认为上游与 fork 必然兼容 | **确定（v1.5）** |
+| ADR-027 | 节点 Provider 与解析器优先复用锁定 fork 原生实现；Core 不重造代理运行实例、只维护资源/配置管理 | **优先路线（E11–E13 验证）** |
+| ADR-028 | 一个订阅只有一个下载 owner；Core→Local Provider 为优先原型、原生 Remote Provider 为对照，最终 Source 事实源经实测定 | **待 E11 决议** |
+| ADR-029 | 组页面按 Selector/URLTest(+fallback)/LoadBalance 的真实运行语义渲染；空组仍从 JSON 展示 | **确定为 UI 规范，E14/E15 验证** |
+| ADR-030 | Provider 动态节点更新允许部分失败；状态与版本真实反映，不把文件写入误报为内核原子生效 | **确定为正确性要求，E12/E13 验证** |
+| ADR-031 | sing-box API 调用的“请求已接受/测速已完成/资源已应用”分离，避免乐观状态误报 | **确定为正确性要求，E15 验证** |
 
 **需在 P0 决定而不是口头假定已解决的问题：** Android Go library 构建链与依赖、TUN FD 所有权、Native Broker 的认证通道、Android 后台 WebUI 服务存活边界、Windows TUN 驱动和权限策略。
 
@@ -1292,6 +1371,14 @@ OS 网络与文件系统              ← 最小权限、明确边界
 **新 TUN 配置原则：** 官方迁移说明自 1.15.0 起 sing-tun 有默认自有栈，`stack` 参数已弃用（计划 1.17.0 移除）；NiPath 的新配置模板不应将旧 `stack` 值硬编码为长期推荐设置。选用 reF1nd 分支时，必须先验证该具体构建确实具备此语义。
 
 **研究结论与正式决策的边界：** 本文新增的是可执行设计约束和原型验收门槛，不代表做过跨平台构建、安全审计或性能实测；E01–E10 通过前保留相应 ADR 的“待验证”状态。
+
+### 19.2 reF1nd fork 核心源码复核（v1.5）
+
+完整研究：[2026-10 sing-box 上游与 reF1nd 分支深度源码审查](research/2026-10-sing-box-core-source-audit.md)。包含精确依赖/tag/commit、Provider 解析器、Local watcher/Remote downloader、部分热更新失败、组成员动态筛选、TCP/UDP、负载均衡与 API 限制。
+
+这次复核后，**NiPath 不应开发与 fork 的 Provider parser、动态 outbound、URLTest、LoadBalance 重复的运行内核**。同时也不能把已存在的功能等同于没有边界的完美可用：Provider UpdateNodes 不是整批原子提交；API 无资源 CRUD；静态组有时不在 gRPC 运行列表出现。
+
+因此以 Core+Local Provider 为 P0 优先实验，**最终是否由 Core 或原生 Remote Provider 下载，以及 Catalog 是否由 SQLite/JSON 承担 Source 配置权威，必须按 E11 测试通过并经 ADR 审议**；本文件现有确定的用户“一个原生 JSON、一套操作”原则不变。
 
 ## 最终决议
 
