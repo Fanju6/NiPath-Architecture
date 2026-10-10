@@ -12,7 +12,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
   await expect(page.getByRole('button', { name: '启动代理' })).toBeDisabled()
-  await expect(page.getByText('Core 未连接', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('mobile-page-overview').getByText('Core 未连接', { exact: true })).toBeVisible()
   // Primary screens have exactly one heading in the shared app bar, not a
   // separate web-style heading at the top of their content.
   await expect(page.getByRole('heading', { name: '概览', exact: true })).toHaveCount(1)
