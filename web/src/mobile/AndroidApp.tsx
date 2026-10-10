@@ -33,7 +33,7 @@ const destinations: { id:Page; title:string; icon:typeof Home; selectedIcon:type
 type Detail = {type:'group'; tag:string}|{type:'json'}|{type:'about'}
 type AddKind = 'group'|'source'|'rule'|null
 function IconButton({label,children,onClick}: {label:string;children:React.ReactNode;onClick:()=>void}) {
- return <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0 rounded-full" aria-label={label} onClick={onClick}>{children}</Button>
+ return <Button type="button" variant="ghost" size="icon" className="size-12 shrink-0 rounded-full" aria-label={label} onClick={onClick}>{children}</Button>
 }
 function Section({title,children}: {title:string;children:React.ReactNode}) {
  return <section className="space-y-3"><h2 className="px-1 text-sm font-semibold text-muted-foreground">{title}</h2><Card className="gap-0 divide-y overflow-hidden py-0">{children}</Card></section>
@@ -144,7 +144,7 @@ function ResourcesScreen() {
    <Tabs value={tab} onValueChange={v=>setTab(v as 'sources'|'nodes')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="sources">订阅 · {sources.length}</TabsTrigger><TabsTrigger value="nodes">节点 · {nodes.length}</TabsTrigger></TabsList></Tabs>
    {tab==='sources'?<Section title="订阅列表">
     {sources.map(s=><div className="space-y-3 px-4 py-4" key={s.id}>
-      <div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><Globe2 size={21}/></div><button className="flex min-w-0 flex-1 flex-col gap-1 text-left" onClick={()=>startSource(s.id)} aria-label={'编辑'+s.name}><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></button><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>{void refreshSource(s.id)}}><RefreshCw size={18}/></Button></div>
+      <div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><Globe2 size={21}/></div><Button variant="ghost" className="h-auto min-h-12 min-w-0 flex-1 flex-col items-start gap-1 px-2 py-2 text-left" onClick={()=>startSource(s.id)} aria-label={'编辑'+s.name}><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></Button><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>{void refreshSource(s.id)}}><RefreshCw size={18}/></Button></div>
       <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-xs text-muted-foreground"><span>{s.updated}</span><Badge variant="outline">{s.status==='applied'?'已生效':s.status==='failed'?'更新失败':'待同步'}</Badge></div>
     </div>)}
     </Section>:<Section title="节点列表">
@@ -186,9 +186,9 @@ function RulesScreen() {
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Tabs value={tab} onValueChange={v=>setTab(v as 'route'|'dns')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="route">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger></TabsList></Tabs>
    {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}>
-     <button className="flex min-w-0 flex-1 flex-col gap-1 text-left" onClick={()=>editRule(r.id)} aria-label={'编辑规则 '+r.match}>
+     <Button variant="ghost" className="h-auto min-h-12 min-w-0 flex-1 flex-col items-start gap-1 px-2 py-2 text-left" onClick={()=>editRule(r.id)} aria-label={'编辑规则 '+r.match}>
        <span className="break-words text-sm font-medium text-foreground">{r.match}</span>
-       <span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></button>
+       <span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></Button>
      <Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}
      {!config.route.rules.length&&<p className="p-6 text-center text-sm text-muted-foreground">暂无路由规则，点击右上角添加。</p>}
      </Section>:
@@ -295,65 +295,135 @@ function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)
     </SheetContent>
    </Sheet>
 }
+type HistoryRoute = {
+  nipathRoute: true
+  page: Page
+  detail: Detail | null
+  sheet: AddKind
+}
+function isPage(value:unknown): value is Page {
+  return destinations.some(item=>item.id===value)
+}
+function isDetail(value:unknown): value is Detail {
+  if (!value || typeof value!=='object') return false
+  const candidate=value as Partial<Detail>
+  return candidate.type==='json'||candidate.type==='about'||
+    (candidate.type==='group'&&typeof (candidate as {tag?:unknown}).tag==='string')
+}
+function routeFromHash(): Pick<HistoryRoute,'page'|'detail'> {
+  const parts=window.location.hash.replace(/^#\/?/,'').split('/')
+  const page=isPage(parts[0])?parts[0]:'overview'
+  if(parts[1]==='group'&&parts[2]&&page==='proxies'){
+    try{return {page,detail:{type:'group',tag:decodeURIComponent(parts.slice(2).join('/'))}}}
+    catch{return {page,detail:null}}
+  }
+  if(parts[1]==='json'&&page==='settings')return {page,detail:{type:'json'}}
+  if(parts[1]==='about'&&page==='settings')return {page,detail:{type:'about'}}
+  return {page,detail:null}
+}
+function urlFor(page:Page,detail:Detail|null){
+  const section=detail?(detail.type==='group'?'/group/'+encodeURIComponent(detail.tag):'/'+detail.type):''
+  return window.location.pathname+window.location.search+'#/'+page+section
+}
 export default function AndroidApp(){
  const {page,setPage,notice,clearNotice,theme}=useUI()
  const [detail,setDetail]=React.useState<Detail|null>(null)
  const [sheet,setSheet]=React.useState<AddKind>(null)
- const scrollRef=React.useRef<HTMLElement>(null)
  const active=destinations.find(x=>x.id===page)!
  React.useEffect(()=>{
-   // Browser history also provides a sensible Android system Back fallback in WebView.
-   const onPop=()=>setDetail(null)
+   // Browser/WebView history is an adapter for Android navigation, not a
+   // replacement for the host Activity's system/predictive Back integration.
+   const existing=window.history.state as Partial<HistoryRoute>|null
+   const route=existing?.nipathRoute&&isPage(existing.page)
+     ? {page:existing.page,detail:isDetail(existing.detail)?existing.detail:null,sheet:null}
+     : {...routeFromHash(),sheet:null}
+   const entry:HistoryRoute={nipathRoute:true,...route}
+   window.history.replaceState(entry,'',urlFor(entry.page,entry.detail))
+   setPage(entry.page)
+   setDetail(entry.detail)
+   const onPop=(event:PopStateEvent)=>{
+     const value=event.state as Partial<HistoryRoute>|null
+     const next=value?.nipathRoute&&isPage(value.page)
+       ? {page:value.page,detail:isDetail(value.detail)?value.detail:null,sheet:value.sheet??null}
+       : {...routeFromHash(),sheet:null}
+     setPage(next.page);setDetail(next.detail);setSheet(next.sheet)
+   }
    window.addEventListener('popstate',onPop)
    return ()=>window.removeEventListener('popstate',onPop)
- },[])
- const openDetail=(next:Detail)=>{
-   window.history.pushState({nipathDetail:true},'', '#'+(next.type==='group'?'group-'+encodeURIComponent(next.tag):next.type))
-   setDetail(next)
+ },[setPage])
+ const pushRoute=(nextPage:Page,nextDetail:Detail|null,nextSheet:AddKind=null)=>{
+   const entry:HistoryRoute={nipathRoute:true,page:nextPage,detail:nextDetail,sheet:nextSheet}
+   window.history.pushState(entry,'',urlFor(nextPage,nextDetail))
+   setPage(nextPage);setDetail(nextDetail);setSheet(nextSheet)
  }
- const back=()=>{
-   if(window.history.state?.nipathDetail)window.history.back()
-   else setDetail(null)
+ const navigate=(id:Page)=>{
+   if(id===page&&!detail)return
+   pushRoute(id,null)
  }
- const navigate=(id:Page)=>{setDetail(null);setPage(id);if(scrollRef.current)scrollRef.current.scrollTop=0}
+ const openDetail=(next:Detail)=>pushRoute(page,next)
+ const back=()=>{window.history.back()}
+ const openSheet=(next:AddKind)=>pushRoute(page,detail,next)
+ const closeSheet=()=>{
+   if((window.history.state as Partial<HistoryRoute>|null)?.sheet)window.history.back()
+   else setSheet(null)
+ }
  const title=detail?(detail.type==='group'?detail.tag:detail.type==='json'?'原生配置':'关于 NiPath'):active.title
+ const showScreen=(id:Page)=>{
+   switch(id){
+     case 'overview':return <OverviewScreen navigate={navigate}/>
+     case 'proxies':return <ProxiesScreen openGroup={tag=>openDetail({type:'group',tag})}/>
+     case 'resources':return <ResourcesScreen/>
+     case 'rules':return <RulesScreen/>
+     case 'settings':return <SettingsScreen openJson={()=>openDetail({type:'json'})} openAbout={()=>openDetail({type:'about'})}/>
+   }
+ }
  return <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background text-foreground" data-testid="android-shell" data-mobile-theme={theme}>
    <header className="shrink-0 border-b bg-background pt-[env(safe-area-inset-top)]" data-testid="mobile-app-bar">
-     {detail ? (
-       <div className="flex h-14 items-center gap-2 px-3">
-         <IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>
-         <span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>
-       </div>
-     ) : (
-       <div className="flex h-14 items-center gap-2 px-4">
-         <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-page-title">{active.title}</h1>
-         {page==='proxies'&&<IconButton label="添加策略组" onClick={()=>setSheet('group')}><Plus size={22}/></IconButton>}
-         {page==='resources'&&<IconButton label="添加订阅" onClick={()=>setSheet('source')}><Plus size={22}/></IconButton>}
-         {page==='rules'&&<IconButton label="新增路由规则" onClick={()=>setSheet('rule')}><Plus size={22}/></IconButton>}
-       </div>
-     )}
+     <div className="flex h-14 items-center gap-2 px-4">
+       {detail&&<IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>}
+       {detail?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>:
+         <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-page-title">{active.title}</h1>}
+       {!detail&&page==='proxies'&&<IconButton label="添加策略组" onClick={()=>openSheet('group')}><Plus size={22}/></IconButton>}
+       {!detail&&page==='resources'&&<IconButton label="添加订阅" onClick={()=>openSheet('source')}><Plus size={22}/></IconButton>}
+       {!detail&&page==='rules'&&<IconButton label="新增路由规则" onClick={()=>openSheet('rule')}><Plus size={22}/></IconButton>}
+     </div>
    </header>
-   <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
-     {detail?.type==='group'?<GroupDetail tag={detail.tag}/>:
-      detail?.type==='json'?<JsonScreen/>:
-      detail?.type==='about'?<AboutScreen/>:
-      page==='overview'?<OverviewScreen navigate={navigate}/>:
-      page==='proxies'?<ProxiesScreen openGroup={tag=>openDetail({type:'group',tag})}/>:
-      page==='resources'?<ResourcesScreen/>:
-      page==='rules'?<RulesScreen/>:
-      <SettingsScreen openJson={()=>openDetail({type:'json'})} openAbout={()=>openDetail({type:'about'})}/>}
-   </main>
-   {!detail&&<nav className="grid shrink-0 grid-cols-5 gap-1 border-t bg-background px-2 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2" aria-label="底部主导航">
+   <div className="flex min-h-0 flex-1">
+     {!detail&&<nav aria-label="平板主导航" className="hidden w-[84px] shrink-0 flex-col gap-2 border-r bg-background px-2 py-4 min-[600px]:flex">
+       {destinations.map(item=>{
+         const Icon=item.icon
+         return <Button key={item.id} type="button" variant={page===item.id?'secondary':'ghost'}
+           aria-current={page===item.id?'page':undefined}
+           className="h-[64px] w-full flex-col gap-1 rounded-lg px-1 py-2" onClick={()=>navigate(item.id)}>
+           <Icon size={22}/><span className="text-[11px]">{item.title}</span>
+         </Button>
+       })}
+     </nav>}
+     <div className="min-h-0 min-w-0 flex-1">
+       {detail?<main className="h-full overflow-y-auto overscroll-contain" data-testid="mobile-detail-content" key={detail.type==='group'?detail.tag:detail.type}>
+         {detail.type==='group'?<GroupDetail tag={detail.tag}/>:
+          detail.type==='json'?<JsonScreen/>:<AboutScreen/>}
+       </main>:destinations.map(item=><main key={item.id}
+          data-testid={'mobile-page-'+item.id}
+          aria-label={item.title+'页面'}
+          className={page===item.id?'h-full overflow-y-auto overscroll-contain':'hidden h-full overflow-y-auto overscroll-contain'}>
+         {showScreen(item.id)}
+       </main>)}
+     </div>
+   </div>
+   {!detail&&<nav className="grid shrink-0 grid-cols-5 gap-1 border-t bg-background px-2 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2 min-[600px]:hidden" aria-label="底部主导航">
      {destinations.map(item=>{
        const Icon=page===item.id?item.selectedIcon:item.icon
-       return <Button type="button" key={item.id} variant={page===item.id?'secondary':'ghost'} size="sm" aria-current={page===item.id?'page':undefined}
-          className="h-[60px] min-w-0 flex-col gap-1 rounded-lg px-0.5 py-1.5 text-[11px]" onClick={()=>navigate(item.id)}>
+       return <Button type="button" key={item.id} variant={page===item.id?'secondary':'ghost'} size="sm"
+         aria-current={page===item.id?'page':undefined}
+         className="h-[60px] min-w-0 flex-col gap-1 rounded-lg px-0.5 py-1.5 text-[11px]" onClick={()=>navigate(item.id)}>
          <Icon size={22} strokeWidth={page===item.id?2.25:1.85}/><span className="text-[11px] leading-tight">{item.title}</span>
        </Button>
      })}
    </nav>}
    {notice&&<div className="fixed bottom-[calc(90px+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex items-center justify-between gap-3 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg" role="status">{notice}
-    <Button size="icon" variant="ghost" aria-label="关闭消息" onClick={clearNotice}><X size={18}/></Button></div>}
-   <AddSheet kind={sheet} onOpenChange={v=>{if(!v)setSheet(null)}}/>
+     <Button size="icon" variant="ghost" aria-label="关闭消息" onClick={clearNotice}><X size={18}/></Button>
+   </div>}
+   <AddSheet kind={sheet} onOpenChange={open=>{if(!open)closeSheet()}}/>
  </div>
 }
