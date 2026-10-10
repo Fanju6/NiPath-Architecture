@@ -1,6 +1,6 @@
 # NiPath 1.0 — 全新架构设计与实施规范
 
-> **架构文档修订：** 1.3（NiPath 品牌与产品版本正式确立）  
+> **架构文档修订：** 1.4（开源实现对标与工程落地规范）  
 > **产品初始发行版本：** 1.0.0（目标版本，尚未发布）  
 > **品牌：** NiPath（奶屁，简称 NP）  
 > **制定日期：** 2026-10-10  
@@ -72,14 +72,14 @@ sing-box 引擎（运行时实际选中、测速、最终出站）
 | 中文名称 / 简称 | `奶屁` / `NP` | 保留既有社区表达和吉祥物文化 |
 | 产品首发版本 | `1.0.0` | 新产品的 SemVer 起点，当前是目标版本，非已发布声明 |
 | GitHub 产品仓库（建议） | `Fanju6/NiPath` | 尚未创建，不声明仓库已存在 |
-| GitHub 架构文档仓库（建议） | `Fanju6/NiPath-Architecture` | 建议设为 Private；与源码仓库分开 |
+| GitHub 架构文档仓库（已创建） | [`Fanju6/NiPath-Architecture`](https://github.com/Fanju6/NiPath-Architecture) | Public；采用 Issue / PR 开放协作，独立于源码仓库 |
 | Go 命令 / 后台服务 | `nipath` | CLI / daemon 共用命令名；由具体运行载体决定启动方式 |
 | Android Root 模块 ID | `nipath` | 新产品可采用独立模块标识，不为旧模块兼容命名 |
 | Android 应用显示名 | `NiPath` | APK 的 applicationId 由开发阶段确定，可独立于 UI 品牌名 |
 | 内部生成节点标识 | `np/node/...` | NP 前缀可保持短小，避免直接拿节点展示名作为引用键 |
 | WebUI / 本机 HTTP API | `NiPath WebUI` / `NiPath Core API` | 仍为同一 Core 提供的一套页面与 API |
 
-**版本号约定：** `NiPath 1.0.0` 指产品发行版本；本文件的 `v1.3` 指**架构文档修订版本**，两者互不等同。Git 仓库对文档变更单独打标签，不代表产品已发行。
+**版本号约定：** `NiPath 1.0.0` 指产品发行版本；本文件的 `v1.4` 指**架构文档修订版本**，两者互不等同。Git 仓库对文档变更单独打标签，不代表产品已发行。
 
 **名称检查：** 品牌选择已确认，但仓库名、软件包名、域名及商标仍需在正式发行前做占用与法律层面的检查；不能把候选命名误写成已获得注册权利。
 
@@ -206,6 +206,19 @@ stopped → preparing → starting → ready
 - 失败时优先保留最后一次有效配置快照，不能写坏当前可运行配置。
 - 启动/停止/重载/配置提交在单运行实例内串行；状态快照读取不阻塞长事务。
 
+### 3.4.1 生命周期实现细化（FlClash 对标所得）
+
+参考 [FlClash 桌面生命周期实现](https://github.com/chen08209/FlClash/blob/main/lib/core/desktop/lifecycle.dart) 与[架构设计说明](https://github.com/chen08209/FlClash/blob/main/.agents/architecture.md)，NiPath 的单运行宿主应落实：
+
+1. **只有一个生命周期 owner**：`start/stop/restart/close` 进入相同 coordinator，不允许 HTTP、CLI、Tauri 和系统广播分别启动实例。
+2. **以最新期望状态收敛**：操作携带单调递增 `intent_revision`；对重复/竞争命令返回 `applied`、`coalesced` 或 `superseded`，避免“启动结束晚于停止指令”导致意外重启。
+3. **实例身份强绑定**：`generation`、宿主 session ID、进程 PID/租约和 API 连接代数要一致。旧引擎的订阅消息不能更新新实例，尚未确认退出的旧实例不能被当作已安全释放。
+4. **ready 需要可观测证据**：进程存活、管理 API 连接成功与 Capture 真正接管网络为不同检查项；不可只凭 PID 或 Tauri 调用返回成功宣布“代理已启动”。
+5. **分开窗口与后台退出**：Tauri 关闭窗口不触发宿主销毁；由系统服务、Android 前台服务或 Root daemon 负责代理生存期。
+6. **失败清理和兜底**：启动部分成功但后续步骤失败时，回收 TUN FD、DNS/路由/代理设定、控制连接，并保持可诊断错误；失败的回滚也要可重试。
+
+FlClash 的生命周期机制作为**设计证据**，不是可直接移植的实现。NiPath 在 P0 通过竞态与故障注入测试后再冻结接口和内部状态机。
+
 ### 3.5 单一原生 JSON 配置：所有编辑入口对同一文件操作
 
 **1.0 不采用 Managed / Expert 双模式，也不为策略组自创第二份 JSON 数据模型。**
@@ -261,6 +274,21 @@ stopped → preparing → starting → ready
 - **SSE** 用于状态、流量、日志等服务器单向推送；只有明确需要双向高速消息流才引入 WebSocket。
 - **CLI** 复用相同 Application Services；如需跨权限控制，可通过本地认证 IPC 代理，而不是直接复制业务处理逻辑。
 - 本地服务优先 loopback 监听；未来若开放 LAN/远程访问，必须独立设计 TLS、配对及授权，不作为 1.0 首发默认功能。
+
+#### 5.1.1 Engine API 适配：复用官方 sing-box 新 API
+
+sing-box 自 **1.14.0** 提供专用 `services[].type=api`：gRPC + gRPC-Web 的运行时服务；官方 [sing-box Dashboard](https://github.com/SagerNet/sing-box-dashboard) 使用该服务，而非以日志解析推断真实状态。[官方 API 文档](https://sing-box.sagernet.org/configuration/service/api/) · [StartedService Protobuf](https://github.com/SagerNet/sing-box-dashboard/blob/main/proto/daemon/started_service.proto)。
+
+**确定为优先实现路线（具体协议版本 P0 验证）：**
+
+- `Engine API Adapter` 连接实际运行的 sing-box/libbox 实例；使用与该引擎版本匹配的**生成式 Protobuf 客户端**，检查 `GetVersion` 的 `apiVersion` 和必要 RPC 是否存在；不再长期维护手工 protobuf wire 编解码。
+- 优先利用 `SubscribeServiceStatus`、`SubscribeStatus`、`SubscribeGroups`、`SubscribeOutbounds`、`SubscribeLog`、`SubscribeConnections`。按需使用 `SelectOutbound`、`URLTest`、`CloseConnection` 等操作，实际方法以所锁定 fork 的 proto 为准。
+- 只由 Go Core / 可信本地适配层持有 Engine API 的 Bearer secret。浏览器和普通 Tauri 页面**只连接 NiPath 管理 API**，不获取 sing-box secret，也不直接暴露它的 gRPC-Web 控制端口给不可信来源。
+- 官方 API 没有 secret 时可不鉴权；默认 Origin 允许策略也不等于 NiPath 的安全方案。**必须显式设置引擎监听范围、secret 与 CORS/Host/Origin 访问边界**。
+- Go Core 对外通过 HTTP/JSON 提供业务快照，并以 SSE 发布经过鉴权、过滤和合并的事件。**不复制第二套运行时引擎**：Go Core 只负责聚合、授权、流式转发和配置/资源业务。
+- 长连接断开要携带 Core `generation` 判定消息有效性，退避重连后**重取完整快照**，再开始应用增量；一次超时的测试结果不得覆盖新实例的延迟。
+
+上述是**核心控制面的技术实现接口**，不是额外的用户配置模式。由于 fork 可能与官方 proto 不一致，E01 必须在确切提交及构建版本下验证。
 
 示例接口（**全新协议草案，非已实现 API**）：
 
@@ -367,6 +395,16 @@ React 源码 → Vite 构建 dist/ → Go //go:embed → Core 二进制/原生�
 **能力声明而非页面分叉：** Go Core 返回 `core_capabilities`，Tauri Broker 返回 `native_capabilities`。React 根据能力决定按钮/交互；不能把缺失原生能力当作业务核心不可用。
 
 ---
+
+### 6.4 前端调用边界与事件性能
+
+借鉴 [Clash Verge Rev 的架构检查脚本](https://github.com/clash-verge-rev/clash-verge-rev/blob/dev/scripts/check-architecture.mjs) 与 [sing-box Dashboard 的 StreamStore](https://github.com/SagerNet/sing-box-dashboard/blob/main/src/api/stream.ts)：
+
+- **页面不能绕过统一 services 层**：React 的 pages/features/components 不直接调用 Tauri `invoke`、引擎 gRPC、携带密钥的 HTTP 客户端或任何 Shell/Root 操作。通过 ESLint / 静态分析 + CI 门禁执行，而不仅靠 Code Review。
+- TanStack Query 负责服务端快照；SSE 事件通过一个集中服务更新或失效对应缓存；Zustand 只保存本地 UI 状态（展开、排序、筛选、导航等），**不复制 Core 持久配置和引擎实时数据**。
+- 流式界面区分 `connecting/active/stale/error`；断线时陈旧数据可供参考，但不可显示成已验证实时状态。仅有组件订阅时才开启对应高频流（流量、日志、连接），页面不可见时降低频率。
+- 日志和连接事件有总量/队列上限、合并策略和慢客户端保护；一次突发事件不得导致页面重绘风暴。
+- 允许用户手动重试；自动重连有退避与同步快照机制；请求失败时恢复按钮与选择状态，不产生永久转圈。
 
 ## 7. 「代理 / 资源 / 规则」与单一配置架构
 
@@ -660,6 +698,38 @@ GET    /api/events                          # SSE：config/catalog/runtime/test
 
 **唯一交互心智模型：** 资源添加节点 → 代理管理策略组 → 规则选择策略组；需要细粒度控制时打开同一份 sing-box 原生 JSON。**没有配置模式切换，没有 Policy Store，没有需要同步的第二套策略组。**
 
+### 7.11 两个事实源与运行态投影的合成规则（SFA / Dashboard 对标）
+
+**代理页面的静态列表**来自同一份原生 JSON：存在什么 `selector` / `urltest`，就列什么；**组内成员的资源元数据**来自 Catalog 和只读 Provider；**当前选中状态、延迟与生效信息**来自受控 sing-box API。不能反向把 API 的组状态保存成另一份 Policy Store。
+
+页面可采用下面的服务端聚合快照（**非最终 API 字段契约**）：
+
+```json
+{
+  "config_revision": 27,
+  "catalog_revision": 91,
+  "runtime_generation": "session-abc",
+  "runtime_state": "ready",
+  "groups": [
+    {
+      "tag": "US",
+      "type": "selector",
+      "candidates": ["np/node/us01", "np/node/us02"],
+      "selected": "np/node/us02",
+      "selected_source": "engine",
+      "delay_ms": 126,
+      "delay_observed_at": "2026-10-10T08:00:00Z"
+    }
+  ]
+}
+```
+
+- 核心停止时不填充 `selected_source=engine` 或新鲜延迟，只呈现配置定义/默认值/注明时间的历史观测。
+- 选择命令采用 `pending → Engine RPC → 确认流快照 → committed`；失败回滚 pending，刷新/切换核心实例时取消过期选择请求。
+- 组内候选可以是子策略组；`selected` 与“递归展开到的最终节点”分开展示；无法从 API 可靠解析时显示“未知”，不猜测。
+- 订阅变化只更新 Catalog 和派生 Provider、有效配置/运行态版本，**不自动创建来源对应的 Auto/Select 策略组**。
+- 参考 [FlClash 策略组组件](https://github.com/chen08209/FlClash/blob/main/lib/views/dashboard/widgets/proxy_groups.dart)：长列表虚拟化、当前选中项自动定位、测试进度按实际并发显示、键盘操作与触控反馈；首发不需要复杂仪表盘拖拽器。
+
 ## 8. Tauri 2：只做可选原生外壳
 
 ### 8.1 唯一职责
@@ -806,6 +876,19 @@ flowchart TB
 - 允许浏览器连接当前可用 Core，但同一设备不应因两个活动 HTTP 服务而误连到非当前控制者。发现、身份和端口关联由握手完成。
 
 ---
+
+### 9.6 VPN FD 生命周期、异常防护与真机验证（SFA / FlClash 对标）
+
+官方 [SFA VPNService](https://github.com/SagerNet/sing-box-for-android/blob/dev/app/src/main/java/io/nekohasekai/sfa/bg/VPNService.kt) 与 [PlatformInterfaceWrapper](https://github.com/SagerNet/sing-box-for-android/blob/dev/app/src/main/java/io/nekohasekai/sfa/bg/PlatformInterfaceWrapper.kt) 提供真实的 Android VpnService/libbox 集成参考：
+
+- 只由 Kotlin `VpnService` 取得系统授权、建立 `Builder`、创建并持有 TUN FD；通过经过确认的 Android native bridge 交给 libbox/Go 核心使用。
+- `protect(fd)` 必须在出站套接字再次进入 VPN 前起效，并分别在 Wi-Fi、蜂窝网络与网络切换后验证。
+- FD 所有权要被明确声明，避免 Java/Kotlin/Go 两方都负责关闭或两方都不关闭；Native 拒绝接管 TUN 必须立即撤销虚拟接口并进入 `failed`。
+- `onRevoke`、后台杀进程、Always-on VPN、前台服务权限/通知以及 Android OS 的 VPN 重建入口，应收敛到**同一个** Runtime Supervisor。
+- 分应用配置使用 `Builder.addAllowedApplication` 或 `addDisallowedApplication`，包名不存在/卸载或权限不满足必须明确处理，不得把无效配置静默视为策略已生效。
+- 非 Root VPN 不继承 Android Root 的 `auto_redirect` 或 eBPF 条件；两者使用不同 Capture 适配与能力声明。
+
+P0 真机至少跑通：TCP / UDP / DNS / IPv4；IPv6、系统 VPN 撤销、包名白黑名单、自身 socket 不回环、Wi-Fi↔蜂窝切换、屏幕锁定与后台存活。**关闭 Tauri UI 不等于关闭 Android VPN Service**。
 
 ## 10. Windows / Linux 运行时
 
@@ -1000,6 +1083,25 @@ OS 网络与文件系统              ← 最小权限、明确边界
 - 验证 JSON 原生组定义、有效合并配置、Service API 实际选择与 UI 聚合快照一致；停止引擎不伪造“当前节点”。
 **P0 结束条件：** 五个实验都有可运行 Demo、可复现构建步骤、失败清单和架构决议（ADR）；没有验证成功的设计不得作为已实现能力写入产品说明。
 
+### P0 附加验证门槛：源码对标落地实验 E01–E10（v1.4）
+
+对应完整研究档案：[2026-10 开源项目源码对标与实施细化](research/2026-10-open-source-architecture-benchmark.md)。
+
+| 实验 | 必须验证的内容 | 结果要求 |
+|---|---|---|
+| E01 Engine API | 单版本 proto 生成客户端、`GetVersion`、`SubscribeGroups`、`SelectOutbound`、URLTest、连接重建、密钥验证 | 真机/进程实测，明确 fork 的 API 差异 |
+| E02 JSON + Catalog | 配置编辑共享 revision、Provider 动态生成、组过滤/嵌套、标签冲突、无效引用、选项丢失保护 | 可复现测试，无第二份 Policy Store |
+| E03 宿主生命周期 | 并发 start/stop/restart、重复命令、崩溃、IPC 断开、延迟旧事件、generation 检查 | 不出现两个活跃的网络接管者 |
+| E04 Android VPN | VpnService FD → libbox、protect、onRevoke、Always-on、网络切换 | 非 Root 真机记录及清理证明 |
+| E05 Android Root | eBPF/Root TUN，守护进程独立存活、失败后路由清理 | Root 真机记录 |
+| E06 Tauri 权限 | localhost WebUI 与 Native Broker 分离、Host/Origin/CSRF、防越权 | 无任意 Root/Shell 暴露 |
+| E07 Windows/Linux | 核心常驻、窗口退出、服务恢复、Mixed/System Proxy；TUN 依平台能力测试 | 可重放启动/异常恢复 |
+| E08 开发隔离 | 调试/测试模式不能改正式安装实例的 DNS、代理、路由或 VPN | 自动化检查 + 实机验证 |
+| E09 UI/事件 | 大量候选节点、有限事件缓存、批量测速、断流刷新/重新订阅 | 真实压力数据，避免无界缓存 |
+| E10 版本与供应链 | proto/schema 依赖版本锁定、关键接口差异检查、许可审查、构建产物审计 | CI 有可验证产物 |
+
+**E08 的“开发隔离模式”只属于测试与工程环境**，不是用户侧 Managed/Expert 配置模式；不允许把双模式重新引入产品。通过真实实验之前，不以截图、理论可行性或不同内核版本的测试代替结论。
+
 ### P1 — 领域模型与 Core 基础
 
 - 定义 Source、Catalog Node、Subscription、Runtime 与单一 sing-box JSON 事务模型；Group/Rule 仅为 JSON 的只读/可受控编辑投影，不建立独立持久表。
@@ -1067,6 +1169,11 @@ OS 网络与文件系统              ← 最小权限、明确边界
 | Linux | 无 GUI、systemd、Mixed/TUN、权限最小化 | 主流发行版实测 |
 | 故障恢复 | 引擎退出、配置错误、网络切换、磁盘满 | 明确状态、可恢复 |
 | 发布 | 构建可复现、签名验证、产物完整性 | CI 可核验 |
+| 新 sing-box API | proto 版本检查、流式订阅断线/重连、超时、鉴权与 RPC 缺失 | 版本能力可识别，不保留手工 wire 编码 |
+| 事件与 UI | 1000 节点长列表、大量测速/日志/连接、慢客户端、陈旧数据标识 | 无无界队列、假在线或永久 loading |
+| 宿主竞态 | 最新意图收敛、延迟旧回调、PID/租约错配、系统 VPN 撤销 | 一致的 desired/observed 状态 |
+| 开发隔离 | 调试会话不触发正式系统的 DNS/路由/代理/TUN 变化 | CI 或真机验证通过 |
+| 静态架构门禁 | 页面绕过 services 调用 Tauri invoke / 引擎 secret / 系统命令 | CI 阻断违规代码 |
 
 在任何自动化测试中，不允许用模拟 Core 状态代替平台网络接管真机测试。
 
@@ -1118,7 +1225,13 @@ OS 网络与文件系统              ← 最小权限、明确边界
 | ADR-016 | 策略组直接由原生 `outbounds` 解析，Catalog → 只读 Provider → 成员映射；组定义不单独存储，状态来自引擎 | **确定（v1.2）** |
 | ADR-017 | 组与规则直接引用 sing-box 原生 `tag`；受控改名检查并更新已知引用；节点采用稳定生成 tag；禁止环依赖/静默直连 | **确定（v1.2）** |
 | ADR-018 | 新产品正式命名 NiPath（奶屁 / NP），从 1.0.0 起步；NiPath 1.0 不再作为下一代产品版本名 | **确定（v1.3）** |
-| ADR-018 | Fallback/LoadBalance 先研究实际引擎数据面支持，再决定实现；不在 Go 控制面伪实现 | **待数据面验证** |
+| ADR-019 | Fallback/LoadBalance 先研究实际引擎数据面支持，再决定实现；不在 Go 控制面伪实现 | **待数据面验证** |
+| ADR-020 | Engine Adapter 优先使用官方 sing-box gRPC API 与生成式 Protobuf 客户端，不重复造流式状态协议 | **首选，E01 验证** |
+| ADR-021 | Runtime Supervisor 采用单所有者、latest-intent 收敛、session generation 与真实 readiness | **设计原则确定，E03 验证** |
+| ADR-022 | UI 数据按 JSON/Catalog/Engine API 合成；请求 pending、断流 stale、重连快照恢复 | **设计原则确定，E01/E02/E09 验证** |
+| ADR-023 | React 原生桥和服务调用集中入口，以 CI 架构门禁执行 | **设计原则确定，E06/E10 验证** |
+| ADR-024 | Android VpnService FD 由平台 Service 持有，libbox 经验证桥接接管；防回环、撤销/失败清理 | **首选，E04 验证** |
+| ADR-025 | 对 sing-box 1.15+ TUN 使用新默认栈方案，避免固化弃用的 stack 参数 | **待当前 fork 版本验证** |
 
 **需在 P0 决定而不是口头假定已解决的问题：** Android Go library 构建链与依赖、TUN FD 所有权、Native Broker 的认证通道、Android 后台 WebUI 服务存活边界、Windows TUN 驱动和权限策略。
 
@@ -1163,6 +1276,22 @@ OS 网络与文件系统              ← 最小权限、明确边界
 14. [sing-box — Cache File](https://sing-box.sagernet.org/configuration/experimental/cache-file/) 与 [Clash API](https://sing-box.sagernet.org/configuration/experimental/clash-api/)：启用 cache_file 后可在支持版本保存 Selector 的运行中选择；旧 `clash_api.store_selected` 字段已废弃，不建议继续配置。
 
 ---
+
+### 19.1 开源实现对标（v1.4 引入）
+
+本文件新加入的生命周期、运行时 API、VPN 边界、UI 事件流与架构门禁建议均有可追溯的源码依据；详细比对、适用范围和 E01–E10 测试参见：
+
+- [NiPath 源码对标报告](research/2026-10-open-source-architecture-benchmark.md)（研究档案，不等于代码已实测）
+- [官方 sing-box Dashboard — StartedService Proto](https://github.com/SagerNet/sing-box-dashboard/blob/main/proto/daemon/started_service.proto)
+- [官方 sing-box Dashboard — StreamStore](https://github.com/SagerNet/sing-box-dashboard/blob/main/src/api/stream.ts)
+- [SFA — Android VPNService](https://github.com/SagerNet/sing-box-for-android/blob/dev/app/src/main/java/io/nekohasekai/sfa/bg/VPNService.kt)
+- [FlClash — 完整架构说明](https://github.com/chen08209/FlClash/blob/main/.agents/architecture.md)
+- [Clash Verge Rev — 架构检查门禁](https://github.com/clash-verge-rev/clash-verge-rev/blob/dev/scripts/check-architecture.mjs)
+- [sing-box API 配置](https://sing-box.sagernet.org/configuration/service/api/) 与 [TUN stack 迁移](https://sing-box.sagernet.org/migration/)
+
+**新 TUN 配置原则：** 官方迁移说明自 1.15.0 起 sing-tun 有默认自有栈，`stack` 参数已弃用（计划 1.17.0 移除）；NiPath 的新配置模板不应将旧 `stack` 值硬编码为长期推荐设置。选用 reF1nd 分支时，必须先验证该具体构建确实具备此语义。
+
+**研究结论与正式决策的边界：** 本文新增的是可执行设计约束和原型验收门槛，不代表做过跨平台构建、安全审计或性能实测；E01–E10 通过前保留相应 ADR 的“待验证”状态。
 
 ## 最终决议
 
