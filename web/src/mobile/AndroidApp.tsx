@@ -214,7 +214,7 @@ function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>v
    <Section title="内核与配置">
     <Row icon={<Wifi size={21}/>} title="网络接管" subtitle={coreConnected?'Core 已连接':'Core 未连接'} onClick={()=>{void loadCoreConfig()}}/>
     <Row icon={<Code2 size={21}/>} title="原生配置" subtitle={'本地配置草稿 · 修订 '+revision} onClick={openJson}/>
-    <Row icon={<SlidersHorizontal size={21}/>} title="DNS 与规则" subtitle="从同一份原生配置读取" onClick={()=>show('进入原生配置页面编辑 DNS 字段')}/>
+    <Row icon={<SlidersHorizontal size={21}/>} title="DNS 与规则" subtitle="从同一份原生配置读取" onClick={openJson}/>
    </Section>
    <Section title="更多"><Row icon={<ShieldCheck size={21}/>} title="安全与访问" subtitle={coreConnected?'连接已建立':'Core 尚未连接'} onClick={()=>show(coreConnected?'当前使用同源 Core 接口':'需要由 NiPath Core 提供已认证的同源 API')}/>
      <Row icon={<CircleHelp size={21}/>} title="关于 NiPath" subtitle="NiPath 1.0 · WebUI" onClick={openAbout}/>
@@ -222,16 +222,34 @@ function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>v
  </div>
 }
 function JsonScreen(){
- const {config,setRawConfig,revision,show}=useUI()
+ const {config,setRawConfig,revision,show,applyConfig,loadCoreConfig,busy,coreConnected}=useUI()
  const [raw,setRaw]=React.useState(()=>JSON.stringify(config,null,2))
  const [error,setError]=React.useState('')
+ const fileInput=React.useRef<HTMLInputElement>(null)
  function save(){const r=setRawConfig(raw);setError(r.ok?'':r.error||'配置无效');if(r.ok)show('配置草稿已保存')}
+ const exportDraft=()=>{
+   const url=URL.createObjectURL(new Blob([raw],{type:'application/json;charset=utf-8'}))
+   const link=document.createElement('a');link.href=url;link.download='nipath-config.json';link.click()
+   window.setTimeout(()=>URL.revokeObjectURL(url),1000)
+ }
+ const importFile=async(file?:File)=>{
+   if(!file)return
+   if(file.size>5*1024*1024){setError('配置文件超过 5 MB');return}
+   try{const contents=await file.text();JSON.parse(contents);setRaw(contents);setError('');show('JSON 文件已导入编辑器，请检查后保存')}
+   catch(e){setError(e instanceof Error?e.message:'文件无效')}
+ }
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
-   <p className="px-1 text-sm text-muted-foreground">本地草稿修订 {revision}</p>
-   <Card className="gap-2 p-4"><strong className="text-sm">单一配置事实源</strong><span className="text-xs text-muted-foreground">这里不会创建第二套规则或策略组数据。</span></Card>
+   <p className="px-1 text-sm text-muted-foreground">草稿修订 {revision} · 修改后可导入或导出</p>
    <Textarea className="min-h-[55dvh] font-mono text-xs leading-6" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false} aria-label="原生 JSON 配置"/>
    {error&&<p className="text-sm text-destructive" role="alert">{error}</p>}
-   <Button className="w-full" size="lg" onClick={save}><CheckCheck size={18}/> 保存配置草稿</Button>
+   <input ref={fileInput} className="hidden" type="file" accept=".json,application/json" aria-label="导入 JSON" onChange={e=>{void importFile(e.target.files?.[0]);e.target.value=''}}/>
+   <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={()=>fileInput.current?.click()}>导入 JSON</Button><Button variant="outline" onClick={exportDraft}>导出 JSON</Button></div>
+   <Button size="lg" onClick={save}><CheckCheck size={18}/> 保存配置草稿</Button>
+   <div className="grid grid-cols-2 gap-2">
+     <Button variant="outline" disabled={!coreConnected||busy} onClick={()=>{void loadCoreConfig()}}>读取设备配置</Button>
+     <Button disabled={!coreConnected||busy} onClick={()=>{void applyConfig()}}>校验并应用</Button>
+   </div>
+   {!coreConnected&&<p className="text-sm text-muted-foreground">Core 未连接，设备配置的校验与应用暂不可用。</p>}
  </div>
 }
 function AboutScreen(){
