@@ -44,6 +44,8 @@ Open <https://fanju6.github.io/NiPath-Architecture/>. For large styling changes,
 
 ## Demo limitations
 
-The current site is a **live interactive frontend demo**, not a functioning proxy. It uses local sample data via `src/store/use-ui.ts`, does not access subscription URLs, does not operate Android Root/VPN, and does not control a sing-box daemon. The Go Core API, SSE and configuration transaction layer are independent upcoming work.
+The current site is a **Core-aware frontend with an empty, editable session workspace**, not a functioning transparent proxy. No fabricated traffic, subscribers or nodes are preloaded. Device control, provider refresh and testing call the same-origin Core API and fail closed while the Go Core is unavailable. Local JSON/group/rule/resource editing works without Core but does not apply to sing-box.
+
+See the precise [implementation status and Core dependency matrix](../design/NiPath-WebUI-Implementation-Status.md). Full native sing-box schema/transaction semantics, live catalog synchronization, real subscription parsing and Root/VPN service are **not yet implemented**.
 
 This frontend uses one JSON configuration authoring interface; it does not introduce Managed/Expert modes. No sample traffic, subscription update state or selected proxy is asserted as a real engine measurement.
