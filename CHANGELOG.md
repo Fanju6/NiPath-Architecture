@@ -2,6 +2,15 @@
 
 此处记录架构文档修订；不是 NiPath 软件版本发布日志。
 
+## v1.5 — sing-box 内核源码复核与 Provider 复用优化
+- 精确核对当前 NetProxy 使用的 reF1nd/sing-box v1.15.0-alpha.11-reF1nd 标签及 Go 源码、与 SagerNet upstream testing 的能力差异。
+- 识别原生 Local/Remote/Inline Provider、内置订阅解析、文件监听热更新、动态组成员、URLTest fallback 和连接级负载均衡。
+- 建议以「Core 下载与验证 → Local Provider 热更新」作为 P0 优先原型，与引擎原生 Remote Provider 比较；禁止一份订阅存在两个并行下载 owner。
+- 指出 Provider 热更新可能部分失败、没有整批原子提交；新增真实更新阶段与应用确认要求。
+- 明确 Selector/URLTest TCP/UDP/LoadBalance 的不同界面状态、空组显示与 API 异步测速语义。
+- 引入 E11–E17 工程实验与 ADR-026–ADR-031；完整报告见 `research/2026-10-sing-box-core-source-audit.md`。
+- 保留 Catalog 和单一原生 JSON 的总体原则；资源配置事实源的进一步精简需以原型验证后 ADR 确定。
+
 ## v1.4 — 开源项目实现对标与工程细化
 - 研究 sing-box 官方 API/Dashboard、sing-box for Android、FlClash、Clash Verge Rev、Hiddify 的核心实现与设计原则；保留可追溯源码报告（`research/2026-10-open-source-architecture-benchmark.md`）。
 - 明确 Engine gRPC/Protobuf Adapter、应用层 HTTP/JSON + SSE 职责及凭据隔离，减少重复协议实现。
