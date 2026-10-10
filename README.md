@@ -1,6 +1,6 @@
 # NiPath · Architecture
 
-**NiPath（奶屁，NP）** 是面向 Android、Windows 与 Linux 的新一代跨平台代理和网络流量管理工具。本仓库公开讨论 **NiPath 1.0** 的产品功能、技术架构和开发路线。这里是**架构设计仓库**，不是已实现的软件源码仓库。
+**NiPath（奶屁，NP）** 是面向 Android、Windows 与 Linux 的新一代跨平台代理和网络流量管理工具。本仓库公开讨论 **NiPath 1.0** 的产品功能、技术架构和开发路线。这里是**架构与前端实现仓库**：包含 NiPath 1.0 架构规范、WebUI React 源码和可在线访问的交互演示；**尚未包含实际运行的 Go Core 或 sing-box 代理应用**。
 
 > **产品目标版本：** NiPath 1.0.0（尚未发布）  
 > **当前架构文档修订版本：** v1.5  
@@ -13,8 +13,10 @@
 - 🧩 [sing-box 核心源码与 reF1nd Provider 深度审查](research/2026-10-sing-box-core-source-audit.md)
 - 🕰️ [历次架构修订](versions/)
 - 🎨 [WebUI 五页面视觉与交互规范（Design v1.0）](design/NiPath-WebUI-Design-v1.0.md)
-- 🖥️ [WebUI 可交互原型（独立 HTML，可保存后浏览器打开）](design/prototypes/nipath-webui-v1.0.html)
-- 🌐 [WebUI 在线预览（需启用 GitHub Pages：main /docs）](https://fanju6.github.io/NiPath-Architecture/)
+- 🧩 [WebUI React + TypeScript + Vite 实际源码与开发说明](web/README.md)
+- ⚙️ [WebUI 自动构建工作流](.github/workflows/webui-build.yml)
+- 🌐 [WebUI React 在线演示（GitHub Pages）](https://fanju6.github.io/NiPath-Architecture/)
+- 🗂️ [原始单文件 HTML 设计原型（历史参考）](design/prototypes/nipath-webui-v1.0.html)
 - 📝 [修订记录](CHANGELOG.md)
 - 🤝 [参与贡献](CONTRIBUTING.md)
 - 💬 [发起架构讨论](https://github.com/Fanju6/NiPath-Architecture/issues/new/choose)
@@ -42,6 +44,6 @@
 
 ## 项目状态与许可
 
-本仓库仍处于设计阶段。架构文档中的接口、示意代码和目录规划不等于已经实现。贡献者提交内容前请勿包含订阅地址、令牌、凭据或其他私密信息。
+本仓库仍处于架构设计和 WebUI 前端开发阶段。React 前端已通过 CI 构建并部署，但使用**模拟数据和本地演示操作**；内核启动、订阅同步、节点测速及配置生效需要后续连接 NiPath Core。架构文档中的接口、示意代码和目录规划不等于均已实现。贡献者提交内容前请勿包含订阅地址、令牌、凭据或其他私密信息。
 
 文档许可和对外重用条件将在仓库维护者明确选择 LICENSE 后生效；在此之前，不应推定所有内容已按某种开源文档许可证授权。
