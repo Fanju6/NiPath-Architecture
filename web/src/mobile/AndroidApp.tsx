@@ -135,10 +135,10 @@ function ResourcesScreen() {
  const [draftTag,setDraftTag]=React.useState('')
  const startSource=(id:string)=>{const src=sources.find(x=>x.id===id);if(!src)return;setEditSource(id);setDraftName(src.name);setDraftUrl(src.url)}
  const startNode=(tag:string)=>{const node=nodes.find(x=>x.tag===tag);setEditNode(tag);setDraftTag(tag);setDraftName(node?.name||'');setDraftAddress(node?.address||'');setDraftProtocol(node?.protocol||'Shadowsocks')}
- const saveSource=()=>{if(!editSource||!draftName.trim()||!/^https?:\\/\\//.test(draftUrl)){show('请输入来源名称和合法的 HTTP(S) 地址');return}updateSource(editSource,draftName.trim(),draftUrl);setEditSource(null)}
+ const saveSource=()=>{if(!editSource||!draftName.trim()||!(draftUrl.startsWith('https://')||draftUrl.startsWith('http://'))){show('请输入来源名称和合法的 HTTP(S) 地址');return}updateSource(editSource,draftName.trim(),draftUrl);setEditSource(null)}
  const saveNode=()=>{if(!draftTag.trim()||!draftName.trim()||!draftAddress.trim()){show('请填写节点 tag、名称及服务器地址');return}
    const node={tag:draftTag.trim(),name:draftName.trim(),source:'本地节点',protocol:draftProtocol,latency:null,flag:'',address:draftAddress.trim()}
-   if(editNode)updateNode(editNode,node);else addNode(node);setEditNode(null)}
+   if(editNode&&editNode!=='new')updateNode(editNode,node);else addNode(node);setEditNode(null)}
 
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Tabs value={tab} onValueChange={v=>setTab(v as 'sources'|'nodes')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="sources">订阅 · {sources.length}</TabsTrigger><TabsTrigger value="nodes">节点 · {nodes.length}</TabsTrigger></TabsList></Tabs>
