@@ -357,7 +357,13 @@ export default function AndroidApp(){
    setPage(nextPage);setDetail(nextDetail);setSheet(nextSheet)
  }
  const navigate=(id:Page)=>{
-   if(id===page&&!detail)return
+   if(id===page&&!detail){
+     // Reselecting an active root destination follows the common Android
+     // convention of returning that list to its beginning.
+     const main=document.querySelector<HTMLElement>('[data-testid="mobile-page-'+id+'"]')
+     if(main)main.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})
+     return
+   }
    pushRoute(id,null)
  }
  const openDetail=(next:Detail)=>pushRoute(page,next)
@@ -422,7 +428,7 @@ export default function AndroidApp(){
        </Button>
      })}
    </nav>}
-   {notice&&<div className="fixed bottom-[calc(90px+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex items-center justify-between gap-3 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg" role="status">{notice}
+   {notice&&<div className="fixed bottom-[calc(90px+env(safe-area-inset-bottom))] left-4 right-4 z-50 min-[600px]:bottom-4 flex items-center justify-between gap-3 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg" role="status">{notice}
      <Button size="icon" variant="ghost" aria-label="关闭消息" onClick={clearNotice}><X size={18}/></Button>
    </div>}
    <AddSheet kind={sheet} onOpenChange={open=>{if(!open)closeSheet()}}/>
