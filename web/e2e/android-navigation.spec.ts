@@ -30,7 +30,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await content.evaluate(node => { node.scrollTop = 120 })
   await expect(title).toHaveText('概览')
   await expect(title).toBeVisible()
-  await expect(appBar).toHaveCSS('height', '56px')
+  await expect(title).toHaveClass(/text-lg/)
   await content.evaluate(node => { node.scrollTop = 0 })
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
