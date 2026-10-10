@@ -1,3 +1,4 @@
+import { Textarea } from '../components/ui/textarea'
 import { AlertTriangle, Bell, CheckCircle2, Clipboard, Code2, Database, Download, HardDrive, Info, LockKeyhole, Monitor, Moon, Router, Save, Settings2, Shield, SlidersHorizontal, Sun, Terminal, Wifi, Wrench } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Badge } from '../components/ui/badge'
@@ -41,7 +42,7 @@ export function SettingsPage(){
      </Card>}
      {section==='config'&&<Card className="editor-card"><div className="section-head"><div><CardTitle>原生 sing-box JSON</CardTitle><p>唯一配置事实源 · 演示版本 revision {revision}</p></div><Badge tone="blue">可编辑</Badge></div>
        <div className="editor-notice"><AlertTriangle size={17}/> 演示编辑器只做 JSON 语法及简化 Schema 校验。真实 sing-box 校验、注释保留、未知字段、版本冲突及运行时应用尚未实现。</div>
-       <textarea spellCheck={false} className="json-editor" value={raw} onChange={e=>{setRaw(e.target.value);setError('')}} aria-label="编辑原生 JSON"/>
+       <Textarea spellCheck={false} className="json-editor" value={raw} onChange={e=>{setRaw(e.target.value);setError('')}} aria-label="编辑原生 JSON"/>
        {error&&<p className="field-error json-error">{error}</p>}
        <div className="editor-actions"><Button variant="outline" onClick={format}><Code2 size={16}/> 格式化</Button><Button variant="outline" onClick={download}><Download size={16}/> 导出</Button><Button onClick={save}><Save size={16}/> 应用到演示数据</Button></div>
      </Card>}
