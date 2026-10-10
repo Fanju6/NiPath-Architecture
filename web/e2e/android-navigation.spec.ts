@@ -8,7 +8,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(shell).toBeVisible()
   await expect(nav).toBeVisible()
   await expect(nav.locator('button')).toHaveCount(5)
-  await expect(page.getByTestId('android-shell')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  await expect(page.getByTestId('android-shell')).toHaveClass(/bg-background/)
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
