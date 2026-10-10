@@ -10,6 +10,22 @@ This is NiPath's **React 19 + TypeScript + Vite + Tailwind CSS 4** frontend, reb
 - `src/styles.css` contains **only the documented default shadcn/ui Neutral light/dark theme and Tailwind imports/base layer**. No legacy `np-*` selectors, custom card/button CSS, gradient palette or hand-painted page layouts.
 - Page-specific layout is composed with Tailwind utilities and the official `Card`, `Table`, `Tabs`, `Dialog`, `Switch`, `NativeSelect`, `Alert` and `Progress` components.
 
+## Android compact layout (Material 3-inspired)
+
+The Android/mobile layout is a **separate presentation**, not a scaled-down shadcn Dashboard:
+
+- [Mobile React entry](src/mobile/AndroidApp.tsx) + [Material 3 compact styling](src/mobile/android.css).
+- A 5-destination bottom navigation bar (Overview, Proxies, Resources, Rules, Settings), 64dp-style top app bar, selected-state indicator, tonal sections, FAB and bottom sheets.
+- Group and JSON sub-pages have a Back action and hide the primary bottom navigation.
+- The presentation respects `env(safe-area-inset-top/bottom)` and uses mobile-sized touch targets.
+- GitHub Pages uses this compact shell below 840 CSS px; desktop retains the official shadcn Sidebar.
+- **This is still React inside a browser/WebView**, not true native Android UI. For the actual Android manager, Kotlin + Jetpack Compose Material 3 is recommended as a separate ADR decision; see [Android UX design spec](../design/NiPath-Android-Material3-Native-UX-v1.md).
+
+## Browser UI regression tests
+
+CI runs `npm run test:e2e` with Playwright Chromium on a **393×852 Android phone viewport** and a 1440×900 desktop viewport. It validates all five bottom destinations, proxy detail Back, bottom-sheet operations, dark theme and desktop Sidebar, and uploads real screenshots as a workflow artifact.
+
+
 The official registry is open-source; see [shadcn/ui](https://github.com/shadcn-ui/ui) for licenses and updates. Components are **vendored project source**, as designed by shadcn/ui; they are not runtime imports from a monolithic UI package.
 
 ## Local development
