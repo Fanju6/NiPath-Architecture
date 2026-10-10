@@ -48,27 +48,27 @@ function Row({icon,iconClassName='',title,subtitle,trailing,onClick,disabled}: {
  return onClick?<Button type="button" variant="ghost" className="h-auto min-h-16 w-full justify-start gap-3 rounded-none px-4 py-3 text-left font-normal hover:bg-accent" onClick={onClick} disabled={disabled}>{content}</Button>:
  <div className="flex min-h-16 w-full items-center gap-3 px-4 py-3">{content}</div>
 }
-function DemoNote({children}: {children?:React.ReactNode}) {
- return <Alert><CircleHelp/><AlertTitle>演示模式</AlertTitle><AlertDescription>{children||'这里展示的是演示数据，没有连接真实 NiPath Core。'}</AlertDescription></Alert>
+function DemoNote() {
+ return <Alert className="mt-auto"><CircleHelp/><AlertTitle>演示模式</AlertTitle>
+ <AlertDescription>此公开预览页面没有接入运行中的 NiPath Core。编辑内容保留为会话草稿，代理启动、节点测速和订阅同步需要设备 Core 服务。</AlertDescription></Alert>
 }
 function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
- const {demoRunning,setRunning,nodes,sources,config}=useUI()
+ const {demoRunning,setRunning,nodes,sources,config,coreConnected,busy,downloadRate,uploadRate,activeConnections}=useUI()
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Card className="gap-4 bg-card py-5">
-     <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{demoRunning?'模拟已连接':'模拟已停止'}</Badge></div>
-     <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{demoRunning?'保护已开启':'代理未运行'}</h2><p className="text-sm text-muted-foreground">Android Root · TUN / eBPF · 演示模式</p></div>
-     <Button type="button" size="lg" className="mx-5" onClick={()=>setRunning(!demoRunning)}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
-     <p className="px-5 text-xs text-muted-foreground">此按钮仅改变页面状态，不会操作实际网络。</p>
+     <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{coreConnected?(demoRunning?'已连接':'已停止'):'Core 未连接'}</Badge></div>
+     <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{coreConnected?(demoRunning?'代理正在运行':'代理未运行'):'等待连接 Core'}</h2><p className="text-sm text-muted-foreground">服务状态与网络接管</p></div>
+     <Button type="button" size="lg" className="mx-5" disabled={!coreConnected||busy} onClick={()=>{void setRunning(!demoRunning)}}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
    </Card>
    <div className="grid grid-cols-2 gap-3">
-     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine size={16}/> 下载</span><strong className="text-2xl tabular-nums">{demoRunning?'12.4':'0'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">模拟实时速度</span></Card>
-     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine size={16}/> 上传</span><strong className="text-2xl tabular-nums">{demoRunning?'2.6':'0'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">模拟实时速度</span></Card>
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine size={16}/> 下载</span><strong className="text-2xl tabular-nums">{coreConnected?(downloadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine size={16}/> 上传</span><strong className="text-2xl tabular-nums">{coreConnected?(uploadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
    </div>
-   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle="仅为演示数值" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{demoRunning?'132':'0'}</span>}/>
+   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle={coreConnected?'当前运行时连接':'等待 Core 连接'} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{activeConnections??'—'}</span>}/>
    <Row icon={<Network size={21}/>} title="策略组" subtitle="JSON 配置定义" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{config.outbounds.length}</span>}/></Section>
    <Section title="常用操作">
      <Row icon={<Globe2 size={21}/>} title="代理策略" subtitle="切换节点，查看测速" onClick={()=>navigate('proxies')}/>
-     <Row icon={<HardDrive size={21}/>} title="订阅资源" subtitle={sources.length+' 个订阅 · '+nodes.length+' 个示例节点'} onClick={()=>navigate('resources')}/>
+     <Row icon={<HardDrive size={21}/>} title="订阅资源" subtitle={sources.length+' 个订阅 · '+nodes.length+' 个节点'} onClick={()=>navigate('resources')}/>
    </Section>
    <DemoNote/>
  </div>
@@ -88,11 +88,10 @@ function ProxiesScreen({openGroup}: {openGroup:(tag:string)=>void}) {
     })}
     {!groups.length&&<div className="p-6 text-center text-sm text-muted-foreground">没有匹配的策略组</div>}
    </Section>
-   <DemoNote>策略组数据来自同一份演示 JSON；当前选择并非真实出口。</DemoNote>
  </div>
 }
 function GroupDetail({tag}: {tag:string}) {
- const {config,nodes,selected,selectNode,show,removeGroup}=useUI()
+ const {config,nodes,selected,selectNode,show,removeGroup,testGroup}=useUI()
  const g=config.outbounds.find(x=>x.tag===tag)
  const [search,setSearch]=React.useState('')
  if(!g)return <div className="p-6 text-center text-sm text-muted-foreground">策略组不存在</div>
@@ -100,18 +99,17 @@ function GroupDetail({tag}: {tag:string}) {
  const members=g.outbounds.filter(id=>id.toLowerCase().includes(search.toLowerCase())||nodes.some(n=>n.tag===id&&n.name.toLowerCase().includes(search.toLowerCase())))
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
    <div className="flex items-center gap-3 px-1 py-2"><span className="grid size-12 shrink-0 place-items-center rounded-lg bg-muted text-foreground"><Network size={23}/></span><p className="text-sm text-muted-foreground">{isManual?'手动选择':g.type==='urltest'?'自动测速':'负载均衡'} · {g.outbounds.length} 个候选</p></div>
-   <Card className="gap-2 p-4"><span className="text-xs text-muted-foreground">{isManual?'已选节点（演示）':g.type==='urltest'?'测速策略':'连接分配策略'}</span><strong className="text-base font-semibold">{isManual?(nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]||'暂无选择'):g.type==='urltest'?'自动选择最佳出口':g.strategy||'按连接调度'}</strong></Card>
+   <Card className="gap-2 p-4"><span className="text-xs text-muted-foreground">{isManual?'当前选中':g.type==='urltest'?'测速策略':'连接分配策略'}</span><strong className="text-base font-semibold">{isManual?(nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]||'暂无选择'):g.type==='urltest'?'自动选择最佳出口':g.strategy||'按连接调度'}</strong></Card>
    <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索成员" placeholder="搜索候选节点" value={search} onChange={e=>setSearch(e.target.value)}/></div>
    <Section title="候选节点">
     {members.map(id=>{const node=nodes.find(n=>n.tag===id),chosen=isManual&&selected[g.tag]===id;return <Row key={id} icon={<Globe2 size={21}/>} title={node?node.flag+' '+node.name:id}
       subtitle={(node?.source||'其他出站')+' · '+(node?latencyText(node.latency):'嵌套策略组')}
       trailing={isManual?(chosen?<span className="grid size-7 place-items-center rounded-full bg-secondary text-secondary-foreground"><Check size={18}/></span>:<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">选择</span>):<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">自动</span>}
-      onClick={()=>isManual?selectNode(g.tag,id):show('此组由内核自动选择，不能手动指定全局出口')}/>})}
+      onClick={()=>{if(isManual)void selectNode(g.tag,id);else show('该策略组由内核自动选择节点')}}/>})}
     {!members.length&&<div className="p-6 text-center text-sm text-muted-foreground">暂无候选成员</div>}
    </Section>
-   <Button variant="outline" size="lg" className="w-full" onClick={()=>show('演示：未连接真实 sing-box URLTest RPC')}><RefreshCw size={18}/> 测试节点延迟</Button>
-   {g.tag!=='默认代理'&&<Button variant="destructive" size="sm" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组（演示）</Button>}
-   <DemoNote>{g.type==='load-balance'?'负载均衡不存在全局选中的固定节点。':'节点选择与延迟均为演示，不代表真实连接。'}</DemoNote>
+   <Button variant="outline" size="lg" className="w-full" onClick={()=>{void testGroup(g.tag)}}><RefreshCw size={18}/> 测试节点延迟</Button>
+   {g.tag!=='默认代理'&&<Button variant="destructive" size="sm" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组</Button>}
  </div>
 }
 function ResourcesScreen() {
@@ -122,10 +120,9 @@ function ResourcesScreen() {
    {tab==='sources'?<Section title="订阅列表">
     {sources.map(s=><div className="space-y-3 px-4 py-4" key={s.id}>
       <div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><Globe2 size={21}/></div><div className="flex min-w-0 flex-1 flex-col gap-1"><strong className="break-words text-sm font-medium text-foreground">{s.name}</strong><span className="break-words text-xs text-muted-foreground">{s.count} 个节点 · {s.traffic}</span></div><Button variant="ghost" size="icon" aria-label={'刷新'+s.name} onClick={()=>refreshSource(s.id)}><RefreshCw size={18}/></Button></div>
-      <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-xs text-muted-foreground"><span>{s.updated}</span><Badge variant="outline">{s.status==='applied'?'已生效（演示）':s.status==='failed'?'更新失败':'等待内核确认'}</Badge></div>
+      <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-xs text-muted-foreground"><span>{s.updated}</span><Badge variant="outline">{s.status==='applied'?'已生效':s.status==='failed'?'更新失败':'待同步'}</Badge></div>
     </div>)}
     </Section>:<Section title="节点列表">{nodes.map(n=><Row key={n.tag} icon={<Wifi size={21}/>} title={n.flag+' '+n.name} subtitle={n.source+' · '+n.protocol} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{latencyText(n.latency)}</span>}/>)}</Section>}
-   <DemoNote>订阅刷新后需要内核明确回执，不能将下载完成误报为已生效。</DemoNote>
  </div>
 }
 function RulesScreen() {
@@ -134,44 +131,41 @@ function RulesScreen() {
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Tabs value={tab} onValueChange={v=>setTab(v as 'route'|'dns')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="route">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger></TabsList></Tabs>
    {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}><div className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{r.match}</span><span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
-    <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="当前演示配置暂无 DNS 规则" onClick={()=>show('DNS 规则未来将直接读取原生 JSON')}/></Section>}
-   <DemoNote>这里只对演示 JSON 进行修改，未进行真实路由命中与配置校验。</DemoNote>
+    <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="通过原生配置编辑 DNS 规则" onClick={()=>show('请到设置 > 原生配置编辑 DNS')}/></Section>}
  </div>
 }
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
- const {theme,setTheme,revision,show}=useUI()
+ const {theme,setTheme,revision,show,coreConnected,loadCoreConfig}=useUI()
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Section title="个性化"><Row icon={theme==='dark'?<Moon size={21}/>:<Sun size={21}/>} title="深色主题" subtitle="跟随 NiPath 当前显示设置"
      trailing={<Switch checked={theme==='dark'} onCheckedChange={v=>setTheme(v?'dark':'light')} aria-label="深色主题"/>}/></Section>
    <Section title="内核与配置">
-    <Row icon={<Wifi size={21}/>} title="网络接管" subtitle="Root · TUN / eBPF（演示）" onClick={()=>show('真实模式需要 Android Platform Host 与 Go Core')}/>
-    <Row icon={<Code2 size={21}/>} title="原生配置" subtitle={'JSON 配置 · 修订 '+revision} onClick={openJson}/>
-    <Row icon={<SlidersHorizontal size={21}/>} title="DNS 与规则" subtitle="从同一份原生配置读取" onClick={()=>show('DNS 设置需要 Core 的原生配置事务能力')}/>
+    <Row icon={<Wifi size={21}/>} title="网络接管" subtitle={coreConnected?'Core 已连接':'Core 未连接'} onClick={()=>{void loadCoreConfig()}}/>
+    <Row icon={<Code2 size={21}/>} title="原生配置" subtitle={'本地配置草稿 · 修订 '+revision} onClick={openJson}/>
+    <Row icon={<SlidersHorizontal size={21}/>} title="DNS 与规则" subtitle="从同一份原生配置读取" onClick={()=>show('进入原生配置页面编辑 DNS 字段')}/>
    </Section>
-   <Section title="更多"><Row icon={<ShieldCheck size={21}/>} title="安全与访问" subtitle="独立后台服务 · 本地鉴权（规划中）" onClick={()=>show('正式版将由 Core 负责鉴权与高权限调用')}/>
-     <Row icon={<CircleHelp size={21}/>} title="关于 NiPath" subtitle="NiPath 1.0 · Android 演示" onClick={openAbout}/>
+   <Section title="更多"><Row icon={<ShieldCheck size={21}/>} title="安全与访问" subtitle={coreConnected?'连接已建立':'Core 尚未连接'} onClick={()=>show(coreConnected?'当前使用同源 Core 接口':'需要由 NiPath Core 提供已认证的同源 API')}/>
+     <Row icon={<CircleHelp size={21}/>} title="关于 NiPath" subtitle="NiPath 1.0 · WebUI" onClick={openAbout}/>
    </Section>
-   <DemoNote/>
  </div>
 }
 function JsonScreen(){
  const {config,setRawConfig,revision,show}=useUI()
  const [raw,setRaw]=React.useState(()=>JSON.stringify(config,null,2))
  const [error,setError]=React.useState('')
- function save(){const r=setRawConfig(raw);setError(r.ok?'':r.error||'配置无效');if(r.ok)show('演示 JSON 已写入本地状态，未应用到真实内核')}
+ function save(){const r=setRawConfig(raw);setError(r.ok?'':r.error||'配置无效');if(r.ok)show('配置草稿已保存')}
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5">
-   <p className="px-1 text-sm text-muted-foreground">配置修订 {revision} · 演示 JSON 编辑器</p>
+   <p className="px-1 text-sm text-muted-foreground">本地草稿修订 {revision}</p>
    <Card className="gap-2 p-4"><strong className="text-sm">单一配置事实源</strong><span className="text-xs text-muted-foreground">这里不会创建第二套规则或策略组数据。</span></Card>
    <Textarea className="min-h-[55dvh] font-mono text-xs leading-6" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false} aria-label="原生 JSON 配置"/>
    {error&&<p className="text-sm text-destructive" role="alert">{error}</p>}
-   <Button className="w-full" size="lg" onClick={save}><CheckCheck size={18}/> 保存演示配置</Button>
-   <DemoNote>并非完整 sing-box Schema，也不会实际应用到内核。</DemoNote>
+   <Button className="w-full" size="lg" onClick={save}><CheckCheck size={18}/> 保存配置草稿</Button>
  </div>
 }
 function AboutScreen(){
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-8 pt-5"><div className="mx-auto mt-7 grid size-16 place-items-center rounded-xl bg-muted"><Network size={35}/></div><h1 className="text-center text-3xl font-semibold">NiPath</h1><p className="text-center text-sm text-muted-foreground">奶屁 · NP</p>
  <Section title="应用信息"><Row icon={<ShieldCheck size={21}/>} title="产品目标版本" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">1.0.0</span>}/>
- <Row icon={<Code2 size={21}/>} title="当前客户端" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">WebUI 演示版</span>}/></Section>
+ <Row icon={<Code2 size={21}/>} title="当前客户端" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">React WebUI</span>}/></Section>
  <Button asChild variant="outline"><a href="https://github.com/Fanju6/NiPath-Architecture" target="_blank" rel="noreferrer">GitHub 架构仓库 <ArrowRight size={18}/></a></Button>
  </div>
 }
@@ -200,7 +194,7 @@ function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)
  }
  return <Sheet open={kind!==null} onOpenChange={o=>{if(!o)close()}}>
     <SheetContent side="bottom" className="max-h-[90dvh] gap-4 overflow-y-auto rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]" showCloseButton={false}>
-      <SheetHeader><SheetTitle>{kind==='group'?'新建策略组':kind==='source'?'添加订阅':'新增路由规则'}</SheetTitle><SheetDescription>这是本地演示操作，不会控制真实内核。</SheetDescription></SheetHeader>
+      <SheetHeader><SheetTitle>{kind==='group'?'新建策略组':kind==='source'?'添加订阅':'新增路由规则'}</SheetTitle><SheetDescription>编辑工作区配置。应用到设备时由 NiPath Core 完成校验。</SheetDescription></SheetHeader>
       <div className="space-y-4 px-1">
        <label className="flex flex-col gap-2 text-sm font-medium">{kind==='rule'?'匹配条件':kind==='source'?'订阅名称':'策略组名称'}<Input value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='rule'?'domain_suffix: example.com':kind==='source'?'我的订阅':'媒体代理'}/></label>
        {kind==='source'&&<label className="flex flex-col gap-2 text-sm font-medium">订阅 URL<Input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com/sub"/></label>}
