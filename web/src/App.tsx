@@ -3,8 +3,8 @@ import AndroidApp from './mobile/AndroidApp'
 import {
   Activity, ArrowDownToLine, ArrowRight, ArrowUpFromLine, Blocks, Check, ChevronRight,
   CircleHelp, Code2, ExternalLink, Globe2, HardDrive, LayoutDashboard,
-  Moon, Network, Pause, Play, Plus, RefreshCcw, Route, Search, Settings2,
-  Sun, Trash2, Wifi, Zap,
+  Moon, Network, Pause, Play, Plus, RefreshCcw, Route, Settings2,
+  Sun, Trash2, Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
