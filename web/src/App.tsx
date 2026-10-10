@@ -274,7 +274,9 @@ function AppContent(){
 }
 // Android-native interaction patterns with the same shadcn/ui visual components as desktop.
 const compactQuery = '(max-width: 839px)'
-const getCompact = () => window.matchMedia(compactQuery).matches
+// Real Android tablets should keep Android app navigation (rail), not switch
+// to the desktop WebUI just because their viewport is wide.
+const getCompact = () => window.matchMedia(compactQuery).matches || /\bAndroid\b/i.test(navigator.userAgent)
 const listenCompact = (notify: () => void) => {
   const query = window.matchMedia(compactQuery)
   query.addEventListener('change', notify)
