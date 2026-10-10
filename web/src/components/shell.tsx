@@ -1,6 +1,7 @@
 import { Activity, Boxes, Cable, CircleHelp, Code2, Gauge, Github, LayoutDashboard, Menu, Moon, Router, Settings, ShieldCheck, Sun, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
+import { Sheet, SheetContent, SheetTitle } from './ui/sheet'
 import { useUI, type Page } from '../store/use-ui'
 const nav: {id:Page;label:string;Icon:typeof Gauge}[] = [
   {id:'overview',label:'概览',Icon:LayoutDashboard},
@@ -15,10 +16,9 @@ export function Shell({children}:{children:React.ReactNode}) {
  useEffect(()=>{document.documentElement.classList.toggle('dark',theme==='dark')},[theme])
  const choose=(p:Page)=>{setPage(p);setMenuOpen(false);window.scrollTo({top:0,behavior:'smooth'})}
  return <div className="app-shell">
-    <aside className={'sidebar '+(menuOpen?'mobile-open':'')}>
+    <aside className="sidebar">
       <div className="brand">
         <span className="brand-logo">N</span><div><div className="brand-name">NiPath <span>1.0</span></div><div className="brand-subtitle">奶屁 · NP</div></div>
-        <button className="lg:hidden ml-auto" aria-label="关闭导航" onClick={()=>setMenuOpen(false)}><X size={20}/></button>
       </div>
       <div className="sidebar-group-label">工作区</div>
       <nav aria-label="主导航" className="side-nav">
@@ -29,7 +29,20 @@ export function Shell({children}:{children:React.ReactNode}) {
         <div className="sidebar-status"><span className="status-dot"/> {demoRunning?'演示：代理已连接':'演示：代理已停止'}<small>仅本地模拟</small></div>
       </div>
     </aside>
-    {menuOpen&&<button className="mobile-shade" onClick={()=>setMenuOpen(false)} aria-label="关闭导航遮罩"/>}
+    <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+      <SheetContent side="left" className="mobile-sheet">
+        <SheetTitle className="sr-only">NiPath 主导航</SheetTitle>
+        <div className="brand">
+          <span className="brand-logo">N</span>
+          <div><div className="brand-name">NiPath <span>1.0</span></div><div className="brand-subtitle">奶屁 · NP</div></div>
+        </div>
+        <div className="sidebar-group-label">工作区</div>
+        <nav aria-label="手机侧栏导航" className="side-nav">
+          {nav.map(({id,label,Icon})=><button key={id} className={'nav-link '+(page===id?'active':'')} onClick={()=>choose(id)} aria-current={page===id?'page':undefined}><Icon size={19}/>{label}{page===id&&<span className="nav-dot"/>}</button>)}
+        </nav>
+        <div className="sidebar-status mt-auto"><span className="status-dot"/> {demoRunning?'演示：代理已连接':'演示：代理已停止'}</div>
+      </SheetContent>
+    </Sheet>
     <div className="main-column">
       <header className="topbar">
         <div className="topbar-left"><button className="mobile-menu" onClick={()=>setMenuOpen(true)} aria-label="打开菜单"><Menu size={22}/></button><span className="crumb-home">NiPath</span><span className="crumb-divider">/</span><strong>{nav.find(n=>n.id===page)?.label}</strong></div>
