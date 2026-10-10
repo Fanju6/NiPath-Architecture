@@ -1,9 +1,9 @@
 import * as React from 'react'
 import {
   Activity, ArrowDownToLine, ArrowRight, ArrowUpFromLine, Blocks, Check, ChevronRight,
-  CircleHelp, Clock3, Code2, ExternalLink, Gauge, Globe2, HardDrive, LayoutDashboard,
-  ListFilter, Menu, Moon, Network, Pause, Play, Plus, RefreshCcw, Route, Search, Settings2,
-  Shield, ShieldCheck, SlidersHorizontal, Sun, Trash2, Wifi, Zap,
+  CircleHelp, Code2, ExternalLink, Globe2, HardDrive, LayoutDashboard,
+  Moon, Network, Pause, Play, Plus, RefreshCcw, Route, Search, Settings2,
+  Sun, Trash2, Wifi, Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -87,7 +87,7 @@ function Overview() {
 }
 
 function Proxies() {
- const {config,nodes,selectedGroup,selectGroup,selected,selectNode,addGroup,removeGroup,show,demoRunning}=useUI()
+ const {config,nodes,selectedGroup,selectGroup,selected,selectNode,addGroup,removeGroup,show}=useUI()
  const [search,setSearch]=React.useState('')
  const [nodeSearch,setNodeSearch]=React.useState('')
  const [creating,setCreating]=React.useState(false)
