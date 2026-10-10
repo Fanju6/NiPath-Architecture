@@ -1,3 +1,5 @@
+import { NativeSelect } from '../components/ui/native-select'
+import { Input } from '../components/ui/input'
 import { ArrowDown, ArrowRight, CircleHelp, Code2, GitMerge, GripVertical, Layers2, Plus, Search, Shield, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -25,7 +27,7 @@ export function RulesPage(){
    <Tabs value={tab} onValueChange={setTab}>
      <TabsList className="page-tabs"><TabsTrigger value="routes">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger><TabsTrigger value="test">规则匹配测试</TabsTrigger></TabsList>
      <TabsContent value="routes"><Card><div className="section-head"><div><CardTitle>路由规则 <Badge tone="blue">{config.route.rules.length}</Badge></CardTitle><p>自上而下匹配，优先命中靠前规则</p></div><Badge tone="neutral">演示配置</Badge></div>
-       <div className="searchbox rule-search"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="搜索规则 / 目标出站" aria-label="搜索路由规则"/></div>
+       <div className="searchbox rule-search"><Search size={16}/><Input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="搜索规则 / 目标出站" aria-label="搜索路由规则"/></div>
        <div className="rule-list">{rules.map((r,i)=><div key={r.id} className={'rule-item '+(!r.enabled?'disabled':'')}>
          <span className="rule-handle"><GripVertical size={18}/></span><span className="rule-number">{String(i+1).padStart(2,'0')}</span>
          <div className="rule-copy"><b>{r.match}</b><small>策略匹配 · {r.enabled?'已启用':'已停用'}</small></div>
@@ -40,13 +42,13 @@ export function RulesPage(){
      </Card></TabsContent>
      <TabsContent value="test"><Card><div className="section-head"><CardTitle>规则匹配测试</CardTitle><Badge tone="amber">静态演示</Badge></div>
       <p className="muted-intro">该功能目前只对示例域名做简单匹配演示，无法证明内核真实路由决策。</p>
-      <div className="test-row"><label>测试域名<input value={example} onChange={e=>setExample(e.target.value)} placeholder="api.openai.com"/></label><Button onClick={()=>show('演示：静态规则匹配预览，非 sing-box 数据面结果')}>测试规则 <ArrowDown size={16}/></Button></div>
+      <div className="test-row"><label>测试域名<Input value={example} onChange={e=>setExample(e.target.value)} placeholder="api.openai.com"/></label><Button onClick={()=>show('演示：静态规则匹配预览，非 sing-box 数据面结果')}>测试规则 <ArrowDown size={16}/></Button></div>
       <div className="test-result"><div><GitMerge size={20}/><strong>预计匹配（静态演示）</strong></div><p>{mockMatching?mockMatching.match:'未匹配；需检查规则'}</p><span>目标：{mockMatching?.outbound||'未知'}</span></div>
      </Card></TabsContent>
    </Tabs>
    <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>新建路由规则</DialogTitle><DialogDescription className="dialog-subtitle">新增后将同步写入同一份演示 JSON。正式实现还会进行引擎 Schema 与引用校验。</DialogDescription>
-    <form className="form-stack" onSubmit={handleSubmit(submit)}><label>匹配条件<input {...register('match')} placeholder="domain_suffix: example.com"/>{errors.match&&<small className="field-error">{errors.match.message}</small>}</label>
-      <label>目标出站<select {...register('outbound')}><option value="direct">direct（直连）</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}</select>{errors.outbound&&<small className="field-error">{errors.outbound.message}</small>}</label>
+    <form className="form-stack" onSubmit={handleSubmit(submit)}><label>匹配条件<Input {...register('match')} placeholder="domain_suffix: example.com"/>{errors.match&&<small className="field-error">{errors.match.message}</small>}</label>
+      <label>目标出站<NativeSelect {...register('outbound')}><option value="direct">direct（直连）</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}</NativeSelect>{errors.outbound&&<small className="field-error">{errors.outbound.message}</small>}</label>
       <div className="dialog-actions"><Button type="button" variant="outline" onClick={()=>setOpen(false)}>取消</Button><Button type="submit"><Plus size={16}/> 添加规则</Button></div></form>
    </DialogContent></Dialog>
  </div>
