@@ -91,9 +91,12 @@ function ProxiesScreen({openGroup}: {openGroup:(tag:string)=>void}) {
  </div>
 }
 function GroupDetail({tag}: {tag:string}) {
- const {config,nodes,selected,selectNode,show,removeGroup,testGroup}=useUI()
+ const {config,nodes,selected,selectNode,show,removeGroup,testGroup,updateGroup}=useUI()
  const g=config.outbounds.find(x=>x.tag===tag)
  const [search,setSearch]=React.useState('')
+ const [edit,setEdit]=React.useState(false)
+ const [name,setName]=React.useState(g?.tag||tag)
+ const [membersText,setMembersText]=React.useState((g?.outbounds||[]).join('\n'))
  if(!g)return <div className="p-6 text-center text-sm text-muted-foreground">策略组不存在</div>
  const isManual=g.type==='selector'
  const members=g.outbounds.filter(id=>id.toLowerCase().includes(search.toLowerCase())||nodes.some(n=>n.tag===id&&n.name.toLowerCase().includes(search.toLowerCase())))
@@ -108,7 +111,15 @@ function GroupDetail({tag}: {tag:string}) {
       onClick={()=>{if(isManual)void selectNode(g.tag,id);else show('该策略组由内核自动选择节点')}}/>})}
     {!members.length&&<div className="p-6 text-center text-sm text-muted-foreground">暂无候选成员</div>}
    </Section>
-   <Button variant="outline" size="lg" className="w-full" onClick={()=>{void testGroup(g.tag)}}><RefreshCw size={18}/> 测试节点延迟</Button>
+   <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={()=>{void testGroup(g.tag)}}><RefreshCw size={18}/>测试延迟</Button>
+    <Button variant="outline" onClick={()=>{setName(g.tag);setMembersText(g.outbounds.join('\n'));setEdit(true)}}>编辑策略组</Button></div>
+   <Sheet open={edit} onOpenChange={setEdit}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+     <SheetHeader><SheetTitle>编辑策略组</SheetTitle><SheetDescription>修改名称及候选节点，保存为配置草稿</SheetDescription></SheetHeader>
+     <label className="space-y-2 text-sm">名称<Input value={name} onChange={e=>setName(e.target.value)}/></label>
+     <label className="space-y-2 text-sm">候选节点（每行一个 tag）<Textarea value={membersText} onChange={e=>setMembersText(e.target.value)}/></label>
+     <Button onClick={()=>{const members=membersText.split(/[,，\n]/).map(x=>x.trim()).filter(Boolean);if(!name.trim()||!members.length){show('请填写名称及成员');return}
+       updateGroup(g.tag,{...g,tag:name.trim(),outbounds:members});setEdit(false)}}>保存策略组</Button>
+   </SheetContent></Sheet>
    {g.tag!=='默认代理'&&<Button variant="destructive" size="sm" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组</Button>}
  </div>
 }
@@ -163,12 +174,36 @@ function ResourcesScreen() {
  </div>
 }
 function RulesScreen() {
- const {config,toggleRule,show}=useUI()
+ const {config,toggleRule,show,updateRule,removeRule,moveRule}=useUI()
  const [tab,setTab]=React.useState<'route'|'dns'>('route')
+ const [editId,setEditId]=React.useState<string|null>(null)
+ const [match,setMatch]=React.useState('')
+ const [outbound,setOutbound]=React.useState('')
+ const editRule=(id:string)=>{const rule=config.route.rules.find(x=>x.id===id);if(rule){setEditId(id);setMatch(rule.match);setOutbound(rule.outbound)}}
+ const saveRule=()=>{const rule=config.route.rules.find(x=>x.id===editId);if(!rule||!match.trim()||!outbound){show('规则匹配条件和目标出站不能为空');return}
+   updateRule(rule.id,{...rule,match:match.trim(),outbound});setEditId(null)}
+
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Tabs value={tab} onValueChange={v=>setTab(v as 'route'|'dns')}><TabsList className="grid h-11 w-full grid-cols-2"><TabsTrigger value="route">路由规则</TabsTrigger><TabsTrigger value="dns">DNS 规则</TabsTrigger></TabsList></Tabs>
-   {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}><div className="flex min-w-0 flex-1 flex-col gap-1"><span className="break-words text-sm font-medium text-foreground">{r.match}</span><span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></div><Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}</Section>:
+   {tab==='route'?<Section title={'路由 · '+config.route.rules.length}>{config.route.rules.map(r=><div className="flex min-h-16 items-center gap-3 px-4 py-4" key={r.id}>
+     <button className="flex min-w-0 flex-1 flex-col gap-1 text-left" onClick={()=>editRule(r.id)} aria-label={'编辑规则 '+r.match}>
+       <span className="break-words text-sm font-medium text-foreground">{r.match}</span>
+       <span className="break-words text-xs text-muted-foreground">目标：{r.outbound}</span></button>
+     <Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={r.enabled?'停用规则':'启用规则'}/></div>)}
+     {!config.route.rules.length&&<p className="p-6 text-center text-sm text-muted-foreground">暂无路由规则，点击右上角添加。</p>}
+     </Section>:
     <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="通过原生配置编辑 DNS 规则" onClick={()=>show('请到设置 > 原生配置编辑 DNS')}/></Section>}
+   <Sheet open={editId!==null} onOpenChange={open=>{if(!open)setEditId(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+     <SheetHeader><SheetTitle>编辑路由规则</SheetTitle><SheetDescription>按列表顺序匹配</SheetDescription></SheetHeader>
+     <label className="space-y-2 text-sm">匹配条件<Input value={match} onChange={e=>setMatch(e.target.value)}/></label>
+     <label className="space-y-2 text-sm">目标出站<NativeSelect value={outbound} onChange={e=>setOutbound(e.target.value)}>
+       <option value="direct">direct</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}
+     </NativeSelect></label>
+     <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={()=>{if(editId)moveRule(editId,-1)}}>上移</Button>
+       <Button variant="outline" onClick={()=>{if(editId)moveRule(editId,1)}}>下移</Button></div>
+     <Button onClick={saveRule}>保存规则</Button>
+     <Button variant="destructive" onClick={()=>{if(editId)removeRule(editId);setEditId(null)}}>删除规则</Button>
+   </SheetContent></Sheet>
  </div>
 }
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
