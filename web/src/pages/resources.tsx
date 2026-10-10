@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Boxes, CalendarClock, CheckCircle2, ChevronRight, CircleAlert, CloudDownload, Copy, Globe2, Link2, Plus, RefreshCcw, Search, Server, SlidersHorizontal, Wifi } from 'lucide-react'
+import { ArrowDownToLine, Boxes, CalendarClock, ChevronRight, CircleAlert, CloudDownload, Copy, Globe2, Link2, Plus, RefreshCcw, Search, Server, SlidersHorizontal, Wifi } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,7 +17,7 @@ const status:{[K in Source['status']]:{label:string;tone:'green'|'amber'|'red'}}
  applied:{label:'已生效（演示）',tone:'green'},pending:{label:'待确认',tone:'amber'},failed:{label:'失败',tone:'red'}
 }
 export function ResourcesPage(){
- const {sources,nodes,refreshSource,addSource,show,config}=useUI()
+ const {sources,nodes,refreshSource,addSource,show}=useUI()
  const [tab,setTab]=useState('subscriptions')
  const [open,setOpen]=useState(false)
  const [query,setQuery]=useState('')
