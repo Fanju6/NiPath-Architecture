@@ -10,16 +10,15 @@ This is NiPath's **React 19 + TypeScript + Vite + Tailwind CSS 4** frontend, reb
 - `src/styles.css` contains **only the documented default shadcn/ui Neutral light/dark theme and Tailwind imports/base layer**. No legacy `np-*` selectors, custom card/button CSS, gradient palette or hand-painted page layouts.
 - Page-specific layout is composed with Tailwind utilities and the official `Card`, `Table`, `Tabs`, `Dialog`, `Switch`, `NativeSelect`, `Alert` and `Progress` components.
 
-## Android compact layout (Material 3-inspired)
+## Android compact layout · shadcn/ui with Android-native interaction
 
-The Android/mobile layout is a **separate presentation**, not a scaled-down shadcn Dashboard:
+The compact Android/mobile UI uses **the same official shadcn/ui New York components and default Neutral theme** as desktop. Only its navigation hierarchy and interaction layout follow Android app patterns:
 
-- [Mobile React entry](src/mobile/AndroidApp.tsx) + [Material 3 compact styling](src/mobile/android.css).
-- A 5-destination bottom navigation bar (Overview, Proxies, Resources, Rules, Settings), 64dp-style top app bar, selected-state indicator, tonal sections, FAB and bottom sheets.
-- Group and JSON sub-pages have a Back action and hide the primary bottom navigation.
-- The presentation respects `env(safe-area-inset-top/bottom)` and uses mobile-sized touch targets.
-- GitHub Pages uses this compact shell below 840 CSS px; desktop retains the official shadcn Sidebar.
-- **This is still React inside a browser/WebView**, not true native Android UI. For the actual Android manager, Kotlin + Jetpack Compose Material 3 is recommended as a separate ADR decision; see [Android UX design spec](../design/NiPath-Android-Material3-Native-UX-v1.md).
+- Source: [mobile/AndroidApp.tsx](src/mobile/AndroidApp.tsx), no separate Material 3 CSS/theme.
+- Fixed five-item bottom navigation, individual detail pages with Back, touch-friendly grouped Card rows, shadcn Sheet creation forms, safe-area insets.
+- Desktop retains the official shadcn Dashboard sidebar.
+- See the current [Android shadcn Native Interaction Spec v2](../design/NiPath-Android-shadcn-Native-UX-v2.md).
+- This remains a WebUI demo; native system API integration is a separate implementation phase.
 
 ## Browser UI regression tests
 

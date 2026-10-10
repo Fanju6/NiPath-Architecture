@@ -21,7 +21,7 @@ import { latencyText, type Group } from '@/lib/demo'
 /**
  * Android-compact presentation, separate from the desktop shadcn dashboard.
  * The data and commands are intentionally the SAME Zustand demo state.
- * Material 3 inspired React/WebView UI; not a Jetpack Compose implementation.
+ * shadcn/ui New York components and Neutral visual design; native Android-style interaction/navigation.
  */
 const destinations: { id:Page; title:string; icon:typeof Home; selectedIcon:typeof Home }[] = [
   { id:'overview', title:'概览', icon:Home, selectedIcon:Home },
@@ -59,7 +59,7 @@ function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
    <Card className="gap-4 bg-card py-5">
      <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{demoRunning?'模拟已连接':'模拟已停止'}</Badge></div>
      <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{demoRunning?'保护已开启':'代理未运行'}</h2><p className="text-sm text-muted-foreground">Android Root · TUN / eBPF · 演示模式</p></div>
-     <Button type="button" size="lg" className="mx-5 w-[calc(100%-40px)]" onClick={()=>setRunning(!demoRunning)}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
+     <Button type="button" size="lg" className="mx-5" onClick={()=>setRunning(!demoRunning)}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
      <p className="px-5 text-xs text-muted-foreground">此按钮仅改变页面状态，不会操作实际网络。</p>
    </Card>
    <div className="grid grid-cols-2 gap-3">

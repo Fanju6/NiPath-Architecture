@@ -1,4 +1,6 @@
-# NiPath 1.0 · Android 原生体验设计规范（Material 3）
+> **状态：已被 [Android shadcn/ui 原生交互设计 v2](NiPath-Android-shadcn-Native-UX-v2.md) 取代。** 本草案中 Material 3 视觉方案已撤销，请勿以此作为当前实现依据。
+
+# [已废止 / Superseded] NiPath 1.0 · Android 原生体验设计规范（原 Material 3 草案）
 
 > 修订日期：2026-10-10  
 > 范围：Android 紧凑尺寸 UI、Android 原生客户端演进方向  

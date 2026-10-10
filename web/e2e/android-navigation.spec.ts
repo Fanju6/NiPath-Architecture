@@ -8,6 +8,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(shell).toBeVisible()
   await expect(nav).toBeVisible()
   await expect(nav.locator('button')).toHaveCount(5)
+  await expect(page.getByTestId('android-shell')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
@@ -17,7 +18,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
 
   await page.getByRole('button', { name: /默认代理/ }).click()
   await expect(page.getByRole('heading', { name: '默认代理', exact: true })).toBeVisible()
-  await expect(nav).toHaveCount(0) // Material sub-page: return action replaces primary navigation
+  await expect(nav).toHaveCount(0) // Native Android navigation hierarchy: detail replaces root tabs
   await page.getByRole('button', { name: '返回' }).click()
   await expect(nav).toBeVisible()
 
@@ -34,8 +35,10 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await nav.getByRole('button', { name: '设置' }).click()
   await expect(page.getByRole('heading', { name: '设置', exact: true })).toBeVisible()
   await page.getByRole('switch', { name: '深色主题' }).click()
-  await expect(page.getByTestId('android-shell')).toHaveClass(/a-dark/)
+  await expect(page.getByTestId('android-shell')).toHaveAttribute('data-mobile-theme', 'dark')
   await expect(nav).toBeVisible()
+  await expect(nav.getByRole('button', { name: '设置' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('[data-testid="android-shell"]')).not.toHaveAttribute('class', /a-dark|material/i)
 
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(horizontalOverflow).toBe(false)
