@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: nipath-webui-build
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -32,23 +32,22 @@ jobs:
       - name: Install packages
         working-directory: web
         run: |
-          # During the UI primitive dependency migration, update the lockfile
-          # deterministically and let CI commit it with the generated site.
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           npm ci --no-audit --no-fund
       - name: Build React application
         working-directory: web
         env:
           GITHUB_PAGES: "true"
         run: npm run build
-      - name: Commit generated website and npm lockfile
+      - name: Commit generated website
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A docs web/package-lock.json
+          git add -A docs
           if git diff --staged --quiet; then
             echo "No generated changes."
           else
             git commit -m "build(webui): publish Vite application [skip ci]"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
