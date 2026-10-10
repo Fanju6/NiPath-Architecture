@@ -1,8 +1,8 @@
 import * as React from 'react'
 import {
-  Activity, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpFromLine,
+  Activity, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpFromLine,
   Check, CheckCheck, ChevronRight, CircleHelp, Code2, Globe2, HardDrive,
-  Home, Layers3, ListFilter, Moon, Network, Pause, Play, Plus, RefreshCw,
+  Home, Layers3, Moon, Network, Pause, Play, Plus, RefreshCw,
   Route, Search, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash2, Wifi, X,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
