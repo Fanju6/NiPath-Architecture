@@ -39,6 +39,19 @@ jobs:
         env:
           GITHUB_PAGES: "true"
         run: npm run build
+      - name: Install browser for Android and desktop UI checks
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Test Android navigation and desktop layout
+        working-directory: web
+        run: npm run test:e2e
+      - name: Upload Android and desktop UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nipath-ui-screenshots
+          path: web/test-results/*.png
+          if-no-files-found: ignore
       - name: Commit generated website and synchronized lockfile
         run: |
           git config user.name "github-actions[bot]"
