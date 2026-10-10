@@ -1,0 +1,54 @@
+name: Build NiPath WebUI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/webui-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nipath-webui-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Typecheck and publish to docs/
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+        continue-on-error: true
+      - name: Install packages
+        working-directory: web
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - name: Build React application
+        working-directory: web
+        env:
+          GITHUB_PAGES: "true"
+        run: npm run build
+      - name: Commit generated website and npm lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs web/package-lock.json
+          if git diff --staged --quiet; then
+            echo "No generated changes."
+          else
+            git commit -m "build(webui): publish Vite application [skip ci]"
+            git push origin HEAD:main
+          fi
