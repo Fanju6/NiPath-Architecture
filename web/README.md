@@ -1,6 +1,8 @@
 # NiPath 1.0 — React WebUI
 
-This is the real Vite/React/TypeScript app, replacing the static visual-only HTML proof of concept. It uses Tailwind CSS 4, Radix-powered local shadcn-style components, TanStack Query, Zustand and React Hook Form + Zod.
+This is a real Vite/React/TypeScript app rather than the old single-file prototype. It uses Tailwind CSS 4, **local Radix primitives adapted toward shadcn/ui's new-york conventions**, TanStack Query, Zustand and React Hook Form + Zod.
+
+**Component adoption is incremental, not complete.** Button, Badge, Card, Dialog and Tabs were aligned with shadcn/ui slot structures and semantic tokens after the source audit. They remain locally adapted components (not a claim that the shadcn CLI generated this project). Existing pages still contain extensive custom NiPath CSS. New primitives should use the official shadcn CLI / registry sources; do not copy handcrafted look-alikes when an official component exists. See [upstream Vite setup](https://ui.shadcn.com/docs/installation/vite) and [theming tokens](https://ui.shadcn.com/docs/theming).
 
 ## Start locally
 
@@ -28,7 +30,7 @@ GitHub Pages remains configured to publish **main /docs**. Workflow `.github/wor
 ## Tech & design
 
 - React 19 + TypeScript + Vite
-- Tailwind CSS 4 + local shadcn-style Radix components
+- Tailwind CSS 4 + shadcn/ui Radix-style local components (Button / Badge / Card / Dialog / Tabs aligned; Input, Select, Switch, Sidebar etc. **not yet migrated**)
 - TanStack Query 5 (snapshot architecture ready)
 - Zustand 5 (presentation and demo state only)
 - React Hook Form + Zod (form validation)
@@ -36,3 +38,10 @@ GitHub Pages remains configured to publish **main /docs**. Workflow `.github/wor
 - Original design: [WebUI Design v1.0](../design/NiPath-WebUI-Design-v1.0.md)
 
 All status and performance figures shown by the demo are **fabricated sample values** clearly labeled as such. This repository contains no live network access credentials.
+
+## Component migration still required
+
+- Replace hand-styled form inputs, native selects, toggle switches, and navigation widgets with shadcn/ui primitives while preserving accessibility, responsive layout, and all five page flows.
+- Migrate legacy `np-*` and fixed hex colors in `src/styles.css` to semantic `background/card/primary/muted/accent/destructive` tokens; keep custom NiPath brand accents intentionally.
+- Use the component registry/CLI for new components, and verify dark mode and mobile touch behavior in browser tests.
+- TanStack Query currently supplies a provider, but no live Core API calls; Go Core integration is a separate milestone.
