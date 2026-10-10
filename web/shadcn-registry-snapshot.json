@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "source": "https://github.com/shadcn-ui/ui/tree/c2a67849be260701852b0977ba15eb5f3a0ce2a4/apps/v4/registry/new-york-v4/ui",
+  "sourceCommit": "c2a67849be260701852b0977ba15eb5f3a0ce2a4",
+  "normalizedImports": "@/registry/new-york-v4/ui/ => @/components/ui/; @/registry/new-york-v4/hooks/ => @/hooks/; cn => @/lib/utils",
+  "components": {
+    "alert.tsx": "11ffb6babd958d6c02e4ea9fd5397f333f814a34",
+    "badge.tsx": "2b41c16fb6f4a78ebab05088c1451c8f8cff0f3d",
+    "button.tsx": "0d202d63f7724dc27b426c2376d28c7fd7198084",
+    "card.tsx": "6c922ec27ab7bb6a3c19253e1b3f5912ee861f91",
+    "dialog.tsx": "92a3c49bbc47b399a914a3abd032ff1d59bae3cc",
+    "input.tsx": "1e3b9328903bda2e241ad19fffd804770f30f082",
+    "label.tsx": "b60fe2f46cf813fb3f66cd5a031f4c2ff93091a2",
+    "native-select.tsx": "9af8cc765b039389ea85edb8743efeb459ec2b64",
+    "progress.tsx": "09d5766e3bf13a61a6779b2dc409db73c8a666a1",
+    "separator.tsx": "baf5a66815ecdc0acfba7f45ea70765838bfe339",
+    "sheet.tsx": "ce2be06dcef94c03e0a2b2b2e77edc0e9726f75e",
+    "sidebar.tsx": "bd8199fa466a4011f7c572197e553558c308ad31",
+    "skeleton.tsx": "3ec6be770b846170b8e7f8916e5f165e2d1730df",
+    "switch.tsx": "4da3efcf691bcac27267625d094e9edcc01ddec0",
+    "table.tsx": "c707725e85a3a6852aff84e01c31999af6317d38",
+    "tabs.tsx": "27365d8b3361a1354178d8295c455763b2858b6b",
+    "textarea.tsx": "8d02e03e18a4ddca3d4626aea8ccd24aef8ebbda",
+    "tooltip.tsx": "d10e766a14bc9c122271308fd1e7ca00a0e1c5f1"
+  }
+}

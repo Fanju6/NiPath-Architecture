@@ -49,3 +49,9 @@ The current site is a **Core-aware frontend with an empty, editable session work
 See the precise [implementation status and Core dependency matrix](../design/NiPath-WebUI-Implementation-Status.md). Full native sing-box schema/transaction semantics, live catalog synchronization, real subscription parsing and Root/VPN service are **not yet implemented**.
 
 This frontend uses one JSON configuration authoring interface; it does not introduce Managed/Expert modes. No sample traffic, subscription update state or selected proxy is asserted as a real engine measurement.
+
+## Official component provenance and Android UX QA
+
+Run `npm run check:ui` to verify the **18 vendored shadcn/ui New York v4 primitives** against the audited official registry snapshot pinned in `shadcn-registry-snapshot.json`, plus Neutral theme tokens and `components.json`. This check is part of CI; intentional upstream upgrades require a new source audit and manifest update. See [UI audit](../design/NiPath-shadcn-Android-UX-Audit-v5.md).
+
+Android compact view uses five bottom destinations; wider Android tablet view uses a rail. Each tab retains its component state and scroll position while navigating; browser/WebView history handles tab, detail and main action-sheet Back. The Android host must independently integrate OS predictive Back, system bars, permissions, and IME insets; a browser screenshot cannot certify OS-native behavior.
