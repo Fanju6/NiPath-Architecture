@@ -10,6 +10,9 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav.locator('button')).toHaveCount(5)
   await expect(page.getByTestId('android-shell')).toHaveClass(/bg-background/)
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: '启动代理' })).toBeDisabled()
+  await expect(page.getByText('Core 未连接', { exact: true })).toBeVisible()
   // Primary screens have exactly one heading in the shared app bar, not a
   // separate web-style heading at the top of their content.
   await expect(page.getByRole('heading', { name: '概览', exact: true })).toHaveCount(1)
@@ -35,6 +38,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
   await nav.getByRole('button', { name: '代理' }).click()
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加策略组' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '代理', exact: true })).toHaveCount(1)
   await expect(nav.getByRole('button', { name: '代理' })).toHaveAttribute('aria-current', 'page')
@@ -55,6 +59,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav).toBeVisible()
 
   await nav.getByRole('button', { name: '资源' }).click()
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加订阅' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '资源', exact: true })).toHaveCount(1)
   await page.getByRole('button', { name: '添加订阅' }).click()
@@ -73,9 +78,11 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByText('测试来源')).toHaveCount(0)
 
   await nav.getByRole('button', { name: '规则' }).click()
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '新增路由规则' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '规则', exact: true })).toHaveCount(1)
   await nav.getByRole('button', { name: '设置' }).click()
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: '设置', exact: true })).toHaveCount(1)
   await page.getByRole('switch', { name: '深色主题' }).click()
   await expect(page.getByTestId('android-shell')).toHaveAttribute('data-mobile-theme', 'dark')
@@ -95,4 +102,33 @@ test('Desktop: native mobile navigation never replaces shadcn dashboard Sidebar'
   await expect(page.getByRole('heading', { name: '概览', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '代理', exact: true })).toBeVisible()
   await page.screenshot({ path: 'test-results/nipath-desktop.png', fullPage: true })
+})
+
+test('Android: rules can be added, edited, enabled and deleted in the workspace', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone')
+  await page.goto('/')
+  await page.getByRole('navigation', { name: '底部主导航' }).getByRole('button', { name: '规则' }).click()
+  await page.getByRole('button', { name: '新增路由规则' }).click()
+  const sheet=page.getByRole('dialog')
+  await sheet.locator('input').fill('domain_suffix: example.org')
+  await sheet.getByRole('button', { name: '确认添加' }).click()
+  await expect(page.getByText('domain_suffix: example.org')).toBeVisible()
+  await page.getByRole('button', { name: '编辑规则 domain_suffix: example.org' }).click()
+  await expect(page.getByRole('heading', { name: '编辑路由规则' })).toBeVisible()
+  await sheet.locator('input').fill('domain_suffix: example.net')
+  await sheet.getByRole('button', { name: '保存规则' }).click()
+  await expect(page.getByText('domain_suffix: example.net')).toBeVisible()
+  await page.getByRole('button', { name: '编辑规则 domain_suffix: example.net' }).click()
+  await sheet.getByRole('button', { name: '删除规则' }).click()
+  await expect(page.getByText('domain_suffix: example.net')).toHaveCount(0)
+})
+
+test('Desktop: presentation has no fake nodes or connections and only overview retains the demo notice', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await page.goto('/')
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
+  await expect(page.getByText('Core 未连接', { exact: true }).first()).toBeVisible()
+  await page.getByRole('button', { name: '代理', exact: true }).click()
+  await expect(page.getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('尚未创建策略组')).toBeVisible()
 })
