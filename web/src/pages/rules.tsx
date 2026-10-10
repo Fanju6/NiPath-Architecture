@@ -1,3 +1,4 @@
+import { Switch } from '../components/ui/switch'
 import { NativeSelect } from '../components/ui/native-select'
 import { Input } from '../components/ui/input'
 import { ArrowDown, ArrowRight, CircleHelp, Code2, GitMerge, GripVertical, Layers2, Plus, Search, Shield, Trash2 } from 'lucide-react'
@@ -32,7 +33,7 @@ export function RulesPage(){
          <span className="rule-handle"><GripVertical size={18}/></span><span className="rule-number">{String(i+1).padStart(2,'0')}</span>
          <div className="rule-copy"><b>{r.match}</b><small>策略匹配 · {r.enabled?'已启用':'已停用'}</small></div>
          <span className="rule-target"><ArrowRight size={15}/><b>{r.outbound}</b></span>
-         <label className="switch"><input type="checkbox" checked={r.enabled} onChange={()=>toggleRule(r.id)} aria-label={(r.enabled?'停用':'启用')+' '+r.match}/><span/></label>
+         <Switch checked={r.enabled} onCheckedChange={()=>toggleRule(r.id)} aria-label={(r.enabled?'停用':'启用')+' '+r.match}/>
          <button className="icon-action" aria-label={'删除 '+r.match} title="删除规则" onClick={()=>removeRule(r.id)}><Trash2 size={16}/></button>
        </div>)}{rules.length===0&&<p className="empty-state">未找到匹配的规则</p>}</div>
        <div className="inline-info"><CircleHelp size={16}/> 原型中的拖拽图标只用于展示。正式实现会通过 JSON 修订事务支持可访问的键盘排序和撤销。</div>
