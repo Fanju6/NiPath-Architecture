@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { configSchema, type Config, type Group, type Node, type Rule, type Source } from '../lib/demo'
+import { configSchema, type Config, type Group, type Node, type Rule, type Source } from '../lib/model'
 import { controlCore, getCoreConfig, getCoreStatus, refreshSubscription, selectGroupNode, testGroup, validateCoreConfig, putCoreConfig } from '../lib/core-api'
 
 export type Page = 'overview'|'proxies'|'resources'|'rules'|'settings'

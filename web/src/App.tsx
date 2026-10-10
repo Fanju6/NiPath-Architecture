@@ -25,7 +25,7 @@ import {
   SidebarProvider, SidebarRail, SidebarTrigger, useSidebar,
 } from '@/components/ui/sidebar'
 import { useUI, type Page } from '@/store/use-ui'
-import { latencyText, type Group } from '@/lib/demo'
+import { latencyText, type Group } from '@/lib/model'
 
 const navigation: { id: Page; name: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', name: '概览', icon: LayoutDashboard },

@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Switch } from '@/components/ui/switch'
 import { useUI, type Page } from '@/store/use-ui'
-import { latencyText, type Group } from '@/lib/demo'
+import { latencyText, type Group } from '@/lib/model'
 
 /**
  * Android-compact presentation, separate from the desktop shadcn dashboard.
