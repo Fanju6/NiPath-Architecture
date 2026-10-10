@@ -24,6 +24,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
   await nav.getByRole('button', { name: '代理' }).click()
+  await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加策略组' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '代理', exact: true })).toHaveCount(1)
   await expect(nav.getByRole('button', { name: '代理' })).toHaveAttribute('aria-current', 'page')
 
@@ -35,6 +36,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav).toBeVisible()
 
   await nav.getByRole('button', { name: '资源' }).click()
+  await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加订阅' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '资源', exact: true })).toHaveCount(1)
   await page.getByRole('button', { name: '添加订阅' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
@@ -43,6 +45,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
   await nav.getByRole('button', { name: '规则' }).click()
+  await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '新增路由规则' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '规则', exact: true })).toHaveCount(1)
   await nav.getByRole('button', { name: '设置' }).click()
   await expect(page.getByRole('heading', { name: '设置', exact: true })).toHaveCount(1)
