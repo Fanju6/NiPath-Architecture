@@ -7,6 +7,12 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'android-phone', use: { browserName: 'chromium', viewport: { width: 393, height: 852 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
+    { name: 'android-tablet', use: {
+      browserName: 'chromium',
+      viewport: { width: 1024, height: 768 },
+      deviceScaleFactor: 2, isMobile: true, hasTouch: true,
+      userAgent: 'Mozilla/5.0 (Linux; Android 16; Pixel Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
+    } },
     { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
