@@ -250,21 +250,28 @@ export default function AndroidApp(){
  const title=detail?(detail.type==='group'?detail.tag:detail.type==='json'?'原生配置':'关于 NiPath'):active.title
  return <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background text-foreground" data-testid="android-shell" data-mobile-theme={theme}>
    <header className="shrink-0 border-b bg-background pt-[env(safe-area-inset-top)]" data-testid="mobile-app-bar">
-     <div className="flex h-14 items-center gap-2 px-3">
-       {detail?<IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>:
-         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground"><Network size={22}/></span>}
-       {detail?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>:
-         collapsed?<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-collapsed-title">{active.title}</span>:
-           <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">NiPath</span>}
-       {!detail&&<Badge variant="outline" className="text-[10px]">DEMO</Badge>}
-       {!detail&&page==='proxies'&&<IconButton label="添加策略组" onClick={()=>setSheet('group')}><Plus size={22}/></IconButton>}
-     {!detail&&page==='resources'&&<IconButton label="添加订阅" onClick={()=>setSheet('source')}><Plus size={22}/></IconButton>}
-     {!detail&&page==='rules'&&<IconButton label="新增路由规则" onClick={()=>setSheet('rule')}><Plus size={22}/></IconButton>}
-     </div>
-     {!detail&&!collapsed&&<div className="space-y-1 px-5 pb-4 pt-1" data-testid="mobile-expanded-title">
-       <h1 className="text-[30px] font-semibold leading-tight tracking-tight">{active.title}</h1>
-       <p className="text-sm text-muted-foreground">{pageDescriptions[page]}</p>
-     </div>}
+     {detail ? (
+       <div className="flex h-14 items-center gap-2 px-3">
+         <IconButton label="返回" onClick={back}><ArrowLeft size={24}/></IconButton>
+         <span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-detail-title">{title}</span>
+       </div>
+     ) : (
+       <div className={collapsed
+         ? 'flex h-14 items-center gap-2 px-4'
+         : 'flex min-h-20 items-end gap-2 px-5 pb-4 pt-3'}>
+         {collapsed ? (
+           <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight" data-testid="mobile-collapsed-title">{active.title}</h1>
+         ) : (
+           <div className="min-w-0 flex-1 space-y-1" data-testid="mobile-expanded-title">
+             <h1 className="text-[30px] font-semibold leading-tight tracking-tight">{active.title}</h1>
+             <p className="text-sm text-muted-foreground">{pageDescriptions[page]}</p>
+           </div>
+         )}
+         {page==='proxies'&&<IconButton label="添加策略组" onClick={()=>setSheet('group')}><Plus size={22}/></IconButton>}
+         {page==='resources'&&<IconButton label="添加订阅" onClick={()=>setSheet('source')}><Plus size={22}/></IconButton>}
+         {page==='rules'&&<IconButton label="新增路由规则" onClick={()=>setSheet('rule')}><Plus size={22}/></IconButton>}
+       </div>
+     )}
    </header>
    <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain" onScroll={onContentScroll} ref={scrollRef} key={detail?detail.type==='group'?detail.tag:detail.type:page}>
      {detail?.type==='group'?<GroupDetail tag={detail.tag}/>:
