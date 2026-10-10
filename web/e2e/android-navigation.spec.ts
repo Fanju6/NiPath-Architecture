@@ -38,7 +38,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await page.screenshot({ path: 'test-results/nipath-android-overview.png', fullPage: true })
 
   await nav.getByRole('button', { name: '代理' }).click()
-  await expect(page.getByTestId('mobile-page-proxies').getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加策略组' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '代理', exact: true })).toHaveCount(1)
   await expect(nav.getByRole('button', { name: '代理' })).toHaveAttribute('aria-current', 'page')
@@ -59,7 +59,7 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav).toBeVisible()
 
   await nav.getByRole('button', { name: '资源' }).click()
-  await expect(page.getByTestId('mobile-page-proxies').getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '添加订阅' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '资源', exact: true })).toHaveCount(1)
   await page.getByRole('button', { name: '添加订阅' }).click()
@@ -78,11 +78,11 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByText('测试来源')).toHaveCount(0)
 
   await nav.getByRole('button', { name: '规则' }).click()
-  await expect(page.getByTestId('mobile-page-proxies').getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
   await expect(page.getByTestId('mobile-app-bar').getByRole('button', { name: '新增路由规则' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '规则', exact: true })).toHaveCount(1)
   await nav.getByRole('button', { name: '设置' }).click()
-  await expect(page.getByTestId('mobile-page-proxies').getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
   await expect(page.getByRole('heading', { name: '设置', exact: true })).toHaveCount(1)
   await page.getByRole('switch', { name: '深色主题' }).click()
   await expect(page.getByTestId('android-shell')).toHaveAttribute('data-mobile-theme', 'dark')
@@ -129,7 +129,7 @@ test('Desktop: presentation has no fake nodes or connections and only overview r
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
   await expect(page.getByText('Core 未连接', { exact: true }).first()).toBeVisible()
   await page.getByRole('button', { name: '代理', exact: true }).click()
-  await expect(page.getByTestId('mobile-page-proxies').getByText('演示模式', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
   await expect(page.getByText('新建策略组后在此管理成员')).toBeVisible()
 })
 
