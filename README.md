@@ -13,7 +13,7 @@
 - 🧩 [sing-box 核心源码与 reF1nd Provider 深度审查](research/2026-10-sing-box-core-source-audit.md)
 - 🕰️ [历次架构修订](versions/)
 - 🎨 [WebUI 五页面视觉与交互规范（Design v1.0）](design/NiPath-WebUI-Design-v1.0.md)
-- 📱 [Android 单一标题栏与原生页面层级 v3（现行）](design/NiPath-Android-TopBar-Native-UX-v3.md)
+- 📱 [Android 固定小标题栏与原生导航 v4（现行）](design/NiPath-Android-Compact-AppBar-UX-v4.md)
 - 🧩 [WebUI React + TypeScript + Vite 实际源码与开发说明](web/README.md)
 - ⚙️ [WebUI 自动构建工作流](.github/workflows/webui-build.yml)
 - 🌐 [WebUI React 在线演示（GitHub Pages）](https://fanju6.github.io/NiPath-Architecture/)
