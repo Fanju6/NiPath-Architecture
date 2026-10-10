@@ -1,3 +1,5 @@
+> ⚠️ **历史版本：当前以 [v3 标题与导航规范](NiPath-Android-TopBar-Native-UX-v3.md) 为准。** v2 的组件和主题结论继续有效，但未充分约束重复标题问题。
+
 # NiPath 1.0 · Android shadcn/ui 与原生应用交互规范 v2
 
 > **现行规范** · 2026-10-10 · 与桌面端共用 shadcn/ui 官方 New York v4 和 Neutral 主题

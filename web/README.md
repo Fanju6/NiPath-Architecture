@@ -15,9 +15,9 @@ This is NiPath's **React 19 + TypeScript + Vite + Tailwind CSS 4** frontend, reb
 The compact Android/mobile UI uses **the same official shadcn/ui New York components and default Neutral theme** as desktop. Only its navigation hierarchy and interaction layout follow Android app patterns:
 
 - Source: [mobile/AndroidApp.tsx](src/mobile/AndroidApp.tsx), no separate Material 3 CSS/theme.
-- Fixed five-item bottom navigation, individual detail pages with Back, touch-friendly grouped Card rows, shadcn Sheet creation forms, safe-area insets.
+- One Miuix-inspired collapsible title within the app bar (never a second page H1), fixed five-item bottom navigation, separate detail pages and Back, grouped shadcn Card rows, Sheet forms and safe-area insets.
 - Desktop retains the official shadcn Dashboard sidebar.
-- See the current [Android shadcn Native Interaction Spec v2](../design/NiPath-Android-shadcn-Native-UX-v2.md).
+- See the current [Android shadcn Native Interaction Spec v2](../design/NiPath-NiPath-Android-TopBar-Native-UX-v3.md).
 - This remains a WebUI demo; native system API integration is a separate implementation phase.
 
 ## Browser UI regression tests
