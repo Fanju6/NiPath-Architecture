@@ -13,6 +13,13 @@ test('Android: bottom navigation survives all five destinations and detail back'
   // Primary screens have exactly one heading in the shared app bar, not a
   // separate web-style heading at the top of their content.
   await expect(page.getByRole('heading', { name: '概览', exact: true })).toHaveCount(1)
+  // The app bar is a page-level native affordance: no product logo,
+  // website-style NiPath label, or redundant DEMO badge.
+  const appBar = page.getByTestId('mobile-app-bar')
+  await expect(appBar.locator('svg')).toHaveCount(0) // overview has no contextual toolbar action
+  await expect(appBar.getByText('NiPath', { exact: true })).toHaveCount(0)
+  await expect(appBar.getByText('DEMO', { exact: true })).toHaveCount(0)
+  await expect(appBar.getByRole('heading', { name: '概览' })).toHaveCount(1)
   await expect(page.getByTestId('mobile-expanded-title')).toBeVisible()
   await expect(page.getByTestId('mobile-collapsed-title')).toHaveCount(0)
   const content = page.locator('main')
