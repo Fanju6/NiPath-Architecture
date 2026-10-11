@@ -1,9 +1,8 @@
 import * as React from 'react'
-import { Activity, Check, ChevronDown, ChevronRight, LayoutGrid, List, Pencil, RefreshCcw, Search } from 'lucide-react'
+import { Activity, Check, ChevronDown, ChevronRight, LayoutGrid, List, Pencil, Search } from 'lucide-react'
 import { useUI } from '@/store/use-ui'
 import { latencyText } from '@/lib/model'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -27,7 +26,7 @@ const groupLabel: Record<Group['type'], string> = {
 export function ProxyGroupsView({ onEdit, className = '' }: Props) {
   const { config, nodes, selected, selectNode, testGroup, proxyViewMode, setProxyViewMode } = useUI()
   const [query, setQuery] = React.useState('')
-  const [expanded, setExpanded] = React.useState<string[]>([])
+  const [expanded, setExpanded] = React.useState<string[]|null>(null)
   const [tab, setTab] = React.useState('')
   const groups = config.outbounds
   const filtered = groups.filter(group => {
@@ -39,12 +38,15 @@ export function ProxyGroupsView({ onEdit, className = '' }: Props) {
   })
   const activeTab = filtered.some(group => group.tag===tab) ? tab : filtered[0]?.tag
   const getName=(tag:string)=>nodes.find(n=>n.tag===tag)?.name || tag
-  const toggle=(tag:string)=>setExpanded(prev=>prev.includes(tag)?prev.filter(k=>k!==tag):[...prev,tag])
-  const isExpanded=(tag:string)=>expanded.includes(tag) || (expanded.length===0&&tag===groups[0]?.tag)
+  const toggle=(tag:string)=>setExpanded(prev=>{
+    const current=prev??(groups[0]?[groups[0].tag]:[])
+    return current.includes(tag)?current.filter(k=>k!==tag):[...current,tag]
+  })
+  const isExpanded=(tag:string)=>expanded===null?tag===groups[0]?.tag:expanded.includes(tag)
 
   // "Expand all" / "Collapse all" applies only to the list presentation.
   const expandAll=()=>setExpanded(filtered.map(g=>g.tag))
-  const collapseAll=()=>setExpanded(['__closed__'])
+  const collapseAll=()=>setExpanded([])
 
   const members=(group:Group)=>{
     const q=query.trim().toLocaleLowerCase()

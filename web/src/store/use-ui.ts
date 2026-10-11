@@ -8,6 +8,8 @@ export type Page = 'overview'|'proxies'|'resources'|'rules'|'settings'
 type Runtime = 'disconnected'|'ready'|'stopped'|'loading'
 type UIState = {
   page: Page
+  proxyViewMode:'list'|'tab'
+  setProxyViewMode:(mode:'list'|'tab')=>void
   theme:'light'|'dark'
   config: Config
   revision: number
@@ -66,10 +68,11 @@ const initial:Pick<UIState,'config'|'sources'|'nodes'|'selected'|'revision'>=pre
 } : {config:emptyConfig,sources:[],nodes:[],selected:{},revision:0}
 
 export const useUI = create<UIState>()(persist((set,get)=>({
-  page:'overview',theme:'light',...initial,coreRevision:null,coreConnected:false,mockMode:preview,
+  page:'overview',theme:'light',proxyViewMode:'list',...initial,coreRevision:null,coreConnected:false,mockMode:preview,
   runtime:preview?'ready':'disconnected',selectedGroup:preview?'默认代理':'',demoRunning:preview,
   notice:null,busy:false,downloadRate:preview?12400000:0,uploadRate:preview?1800000:0,activeConnections:preview?132:null,
   setPage:page=>set({page}),
+  setProxyViewMode:proxyViewMode=>set({proxyViewMode}),
   setTheme:theme=>set({theme}),
   show:notice=>set({notice}),
   clearNotice:()=>set({notice:null}),
@@ -224,6 +227,6 @@ export const useUI = create<UIState>()(persist((set,get)=>({
     return {...(hasEntries?old:{...initial,theme:old.theme||'light'}),mockMode:preview}
   },
   // URLs and config can contain secrets: never save these to localStorage.
-  partialize:s=>({theme:s.theme,config:s.config,revision:s.revision,selected:s.selected,
+  partialize:s=>({theme:s.theme,proxyViewMode:s.proxyViewMode,config:s.config,revision:s.revision,selected:s.selected,
     nodes:s.nodes,sources:s.sources,selectedGroup:s.selectedGroup}),
 }))
