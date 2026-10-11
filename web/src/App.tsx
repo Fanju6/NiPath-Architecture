@@ -123,9 +123,10 @@ function Proxies(){
 }
 
 function Resources(){
- const {sources,nodes,addSource,updateSource,removeSource,refreshSource,addNode,removeNode,show}=useUI()
+ const {sources,nodes,addSource,updateSource,removeSource,refreshSource,addNode,updateNode,removeNode,show}=useUI()
  const [dialog,setDialog]=React.useState<'source'|'node'|null>(null)
  const [editId,setEditId]=React.useState<string|null>(null)
+ const [editNodeTag,setEditNodeTag]=React.useState<string|null>(null)
  const [name,setName]=React.useState('')
  const [url,setUrl]=React.useState('')
  const [protocol,setProtocol]=React.useState('Shadowsocks')
@@ -138,14 +139,21 @@ function Resources(){
      if(editId)updateSource(editId,name.trim(),url);else addSource(name.trim(),url)
    }else if(dialog==='node'){
      if(!tag.trim()||!url.trim()){show('请输入节点 tag 与地址');return}
-     addNode({tag:tag.trim(),name:name.trim(),address:url.trim(),source:'本地节点',protocol,flag:'',latency:null})
+     const value={tag:tag.trim(),name:name.trim(),address:url.trim(),source:'本地节点',protocol,flag:'',latency:null}
+     if(editNodeTag)updateNode(editNodeTag,value);else addNode(value)
    }
    setDialog(null)
  }
  const beginSource=(id?:string)=>{
    const value=sources.find(x=>x.id===id);setName(value?.name||'');setUrl(value?.url||'');setEditId(id||null);setDialog('source')
  }
- const beginNode=()=>{setEditId(null);setName('');setUrl('');setTag('local/'+crypto.randomUUID().slice(0,8));setDialog('node')}
+ const beginNode=(tagToEdit?:string)=>{
+    const node=nodes.find(x=>x.tag===tagToEdit)
+    setEditId(null);setEditNodeTag(tagToEdit||null)
+    setName(node?.name||'');setUrl(node?.address||'')
+    setTag(node?.tag||'local/'+crypto.randomUUID().slice(0,8))
+    setProtocol(node?.protocol||'Shadowsocks');setDialog('node')
+ }
  const filtered=nodes.filter(n=>[n.tag,n.name,n.protocol,n.source].join(' ').toLowerCase().includes(query.toLowerCase()))
  return <div className="space-y-6"><PageHeading title="资源" description="订阅来源、本地节点和资源目录。"><Button onClick={()=>beginSource()}><Plus/>添加订阅</Button></PageHeading>
   <div className="grid gap-4 sm:grid-cols-3"><Metric title="订阅" value={String(sources.length)} subtitle="工作区来源" icon={Globe2}/><Metric title="节点" value={String(nodes.length)} subtitle="节点资料" icon={HardDrive}/><Metric title="已测速" value={String(nodes.filter(n=>n.latency!==null).length)} subtitle="可用的测速记录" icon={Zap}/></div>
@@ -158,16 +166,17 @@ function Resources(){
      <Button variant="ghost" size="icon" aria-label={'删除'+x.name} onClick={()=>removeSource(x.id)}><Trash2/></Button>
    </div>)}{!sources.length&&<p className="p-6 text-sm text-muted-foreground">还没有订阅来源，点击“添加订阅”开始。</p>}
   </CardContent></Card></TabsContent>
-  <TabsContent value="nodes"><Card><CardHeader><CardTitle>节点资料</CardTitle><CardAction><Button variant="outline" size="sm" onClick={beginNode}><Plus/>添加节点</Button></CardAction></CardHeader><CardContent className="space-y-4">
+  <TabsContent value="nodes"><Card><CardHeader><CardTitle>节点资料</CardTitle><CardAction><Button variant="outline" size="sm" onClick={()=>beginNode()}><Plus/>添加节点</Button></CardAction></CardHeader><CardContent className="space-y-4">
     <Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索节点"/>
     <Table><TableHeader><TableRow><TableHead>名称</TableHead><TableHead>协议</TableHead><TableHead>来源</TableHead><TableHead>延迟</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
      <TableBody>{filtered.map(n=><TableRow key={n.tag}><TableCell>{n.name}</TableCell><TableCell>{n.protocol}</TableCell><TableCell>{n.source}</TableCell><TableCell>{latencyText(n.latency)}</TableCell>
-      <TableCell><Button variant="ghost" size="icon" aria-label={'删除节点'+n.name} onClick={()=>removeNode(n.tag)}><Trash2/></Button></TableCell></TableRow>)}</TableBody></Table>
+      <TableCell><div className="flex items-center gap-1"><Button variant="ghost" size="sm" onClick={()=>beginNode(n.tag)} aria-label={'编辑节点'+n.name}>编辑</Button>
+        <Button variant="ghost" size="icon" aria-label={'删除节点'+n.name} onClick={()=>removeNode(n.tag)}><Trash2/></Button></div></TableCell></TableRow>)}</TableBody></Table>
     {!filtered.length&&<p className="py-4 text-sm text-muted-foreground">暂无节点</p>}
   </CardContent></Card></TabsContent></Tabs>
-  <Dialog open={dialog!==null} onOpenChange={open=>{if(!open)setDialog(null)}}><DialogContent><DialogHeader><DialogTitle>{dialog==='source'?'订阅来源':'本地节点'}</DialogTitle><DialogDescription>保存到工作区</DialogDescription></DialogHeader>
+  <Dialog open={dialog!==null} onOpenChange={open=>{if(!open)setDialog(null)}}><DialogContent><DialogHeader><DialogTitle>{dialog==='source'?'订阅来源':editNodeTag?'编辑节点':'添加本地节点'}</DialogTitle><DialogDescription>保存到工作区</DialogDescription></DialogHeader>
    <div className="space-y-3"><label className="block space-y-2 text-sm">名称<Input value={name} onChange={e=>setName(e.target.value)}/></label>
-    {dialog==='node'&&<><label className="block space-y-2 text-sm">Tag<Input value={tag} onChange={e=>setTag(e.target.value)}/></label><label className="block space-y-2 text-sm">协议<NativeSelect value={protocol} onChange={e=>setProtocol(e.target.value)}>{['Shadowsocks','VLESS','VMess','Trojan','Hysteria2','TUIC'].map(x=><option key={x}>{x}</option>)}</NativeSelect></label></>}
+    {dialog==='node'&&<><label className="block space-y-2 text-sm">Tag<Input value={tag} disabled={!!editNodeTag} onChange={e=>setTag(e.target.value)}/></label><label className="block space-y-2 text-sm">协议<NativeSelect value={protocol} onChange={e=>setProtocol(e.target.value)}>{['Shadowsocks','VLESS','VMess','Trojan','Hysteria2','TUIC','AnyTLS'].map(x=><option key={x}>{x}</option>)}</NativeSelect></label></>}
     <label className="block space-y-2 text-sm">{dialog==='source'?'订阅 URL':'服务器地址'}<Input value={url} onChange={e=>setUrl(e.target.value)}/></label>
    </div><DialogFooter><Button variant="outline" onClick={()=>setDialog(null)}>取消</Button><Button onClick={save}>保存</Button></DialogFooter>
   </DialogContent></Dialog>
