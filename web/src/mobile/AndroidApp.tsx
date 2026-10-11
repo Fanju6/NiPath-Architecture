@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Sheet, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { KeyboardAwareSheetContent } from './KeyboardAwareSheet'
+import { ProxyGroupsView } from '@/components/proxy-groups-view'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -75,20 +76,8 @@ function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
  </div>
 }
 function ProxiesScreen({openGroup}: {openGroup:(tag:string)=>void}) {
- const {config,selected,nodes}=useUI()
- const [search,setSearch]=React.useState('')
- const groups=config.outbounds.filter(g=>g.tag.toLowerCase().includes(search.toLowerCase()))
- return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
-   <div className="relative"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input className="h-11 pl-10" aria-label="搜索策略组" value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组"/></div>
-   <Section title={'策略组 · '+config.outbounds.length}>
-    {groups.map(g=>{
-     const current=nodes.find(n=>n.tag===selected[g.tag])?.name||selected[g.tag]
-     const secondary=g.type==='selector'?('手动选择 · '+(current||'未选择')):g.type==='urltest'?'自动测速 · 根据延迟选择':'负载均衡 · 按连接调度'
-     return <Row key={g.tag} icon={g.type==='selector'?<Network size={21}/>:g.type==='urltest'?<Activity size={21}/>:<Layers3 size={21}/>}
-       title={g.tag} subtitle={secondary} onClick={()=>openGroup(g.tag)} />
-    })}
-    {!groups.length&&<div className="p-6 text-center text-sm text-muted-foreground">没有匹配的策略组</div>}
-   </Section>
+ return <div className="relative flex min-h-full flex-col gap-4 px-4 pb-28 pt-4">
+   <ProxyGroupsView onEdit={openGroup}/>
  </div>
 }
 function GroupDetail({tag}: {tag:string}) {
