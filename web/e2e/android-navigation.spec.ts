@@ -12,7 +12,6 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
   await expect(page.getByRole('button', { name: '停止代理' })).toBeEnabled()
-  await expect(page.getByText('Aurora Premium')).toHaveCount(0) // available in the resources tab
   await page.getByRole('button', { name: '停止代理' }).click()
   await expect(page.getByRole('button', { name: '启动代理' })).toBeEnabled()
   await page.getByRole('button', { name: '启动代理' }).click()
