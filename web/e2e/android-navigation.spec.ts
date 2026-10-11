@@ -46,8 +46,8 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByRole('heading', { name: '代理', exact: true })).toHaveCount(1)
   await expect(nav.getByRole('button', { name: '代理' })).toHaveAttribute('aria-current', 'page')
 
-  await expect(page.getByRole('button', { name: '默认代理' })).toBeVisible()
-  await page.getByRole('button', { name: '默认代理' }).click()
+  await expect(page.getByRole('button', { name: /默认代理/ })).toBeVisible()
+  await page.getByRole('button', { name: /默认代理/ }).click()
   await expect(page.getByTestId('mobile-detail-title')).toHaveText('默认代理')
   await expect(page.getByRole('heading', { name: '默认代理', exact: true })).toHaveCount(0)
   await expect(nav).toHaveCount(0) // Native Android navigation hierarchy: detail replaces root tabs
@@ -179,4 +179,43 @@ test('Android tablet: use a navigation rail and restore the same tab state', asy
   await rail.getByRole('button',{name:'资源'}).click()
   await expect(page.getByRole('tab',{name:/节点/})).toHaveAttribute('aria-selected','true')
   await page.screenshot({path:'test-results/nipath-android-tablet.png',fullPage:true})
+})
+
+test('Android: input sheets adjust to keyboard viewport and keep controls accessible', async ({page},testInfo)=>{
+  test.skip(testInfo.project.name!=='android-phone')
+  await page.goto('/')
+  await page.getByRole('navigation',{name:'底部主导航'}).getByRole('button',{name:'资源'}).click()
+  await page.getByRole('button',{name:'添加订阅'}).click()
+  const sheet=page.getByTestId('keyboard-aware-sheet')
+  await expect(sheet).toBeVisible()
+  await sheet.locator('input').first().focus()
+  const metrics=await page.evaluate(()=>{
+    const viewport=window.visualViewport
+    if(!viewport) return null
+    Object.defineProperty(viewport,'height',{configurable:true,value:380})
+    viewport.dispatchEvent(new Event('resize'))
+    return {innerHeight:window.innerHeight,offset:viewport.offsetTop}
+  })
+  if(metrics){
+    await expect.poll(async()=>sheet.evaluate(el=>Number.parseInt((el as HTMLElement).style.bottom||'0'))).toBeGreaterThan(0)
+    const bottom=await sheet.evaluate(el=>(el as HTMLElement).style.bottom)
+    expect(Number.parseInt(bottom)).toBeGreaterThanOrEqual(metrics.innerHeight-380-metrics.offset-2)
+    await expect(sheet.locator('input').first()).toBeVisible()
+    await expect(sheet.getByRole('button',{name:'确认添加'})).toBeVisible()
+  }
+})
+
+test('Desktop: edit a node and access the same settings sections as Android',async({page},testInfo)=>{
+  test.skip(testInfo.project.name!=='desktop')
+  await page.goto('/')
+  await page.getByRole('button',{name:'资源',exact:true}).click()
+  await page.getByRole('tab',{name:'节点'}).click()
+  await page.getByRole('button',{name:'编辑节点洛杉矶 01'}).click()
+  const dialog=page.getByRole('dialog')
+  await expect(dialog.getByRole('heading',{name:'编辑节点'})).toBeVisible()
+  await dialog.locator('input').first().fill('洛杉矶 A')
+  await dialog.getByRole('button',{name:'保存'}).click()
+  await expect(page.getByText('洛杉矶 A')).toBeVisible()
+  await page.getByRole('button',{name:'设置',exact:true}).click()
+  for(const tab of ['DNS','安全','关于']) await expect(page.getByRole('tab',{name:tab})).toBeVisible()
 })
