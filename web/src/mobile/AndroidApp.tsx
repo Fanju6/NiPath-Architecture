@@ -5,7 +5,8 @@ import {
   Home, Layers3, Moon, Network, Pause, Play, Plus, RefreshCw,
   Route, Search, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash2, Wifi, X,
 } from 'lucide-react'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { KeyboardAwareSheetContent } from './KeyboardAwareSheet'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -53,18 +54,18 @@ function DemoNote() {
  <AlertDescription>此公开预览页面没有接入运行中的 NiPath Core。编辑内容保留为会话草稿，代理启动、节点测速和订阅同步需要设备 Core 服务。</AlertDescription></Alert>
 }
 function OverviewScreen({navigate}: {navigate:(page:Page)=>void}) {
- const {demoRunning,setRunning,nodes,sources,config,coreConnected,busy,downloadRate,uploadRate,activeConnections}=useUI()
+ const {demoRunning,setRunning,nodes,sources,config,coreConnected,mockMode,busy,downloadRate,uploadRate,activeConnections}=useUI()
  return <div className="relative flex min-h-full flex-col gap-5 px-4 pb-28 pt-5">
    <Card className="gap-4 bg-card py-5">
-     <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{coreConnected?(demoRunning?'已连接':'已停止'):'Core 未连接'}</Badge></div>
-     <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{coreConnected?(demoRunning?'代理正在运行':'代理未运行'):'等待连接 Core'}</h2><p className="text-sm text-muted-foreground">服务状态与网络接管</p></div>
-     <Button type="button" size="lg" className="mx-5" disabled={!coreConnected||busy} onClick={()=>{void setRunning(!demoRunning)}}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
+     <div className="flex items-center justify-between gap-3 px-5"><span className="grid size-12 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ShieldCheck size={30} strokeWidth={1.8}/></span><Badge variant="secondary">{coreConnected||mockMode?(demoRunning?'已连接':'已停止'):'Core 未连接'}</Badge></div>
+     <div className="space-y-1 px-5"><h2 className="text-xl font-semibold">{coreConnected||mockMode?(demoRunning?'代理正在运行':'代理未运行'):'等待连接 Core'}</h2><p className="text-sm text-muted-foreground">服务状态与网络接管</p></div>
+     <Button type="button" size="lg" className="mx-5" disabled={(!coreConnected&&!mockMode)||busy} onClick={()=>{void setRunning(!demoRunning)}}>{demoRunning?<Pause size={19}/>:<Play size={19}/>} {demoRunning?'停止代理':'启动代理'}</Button>
    </Card>
    <div className="grid grid-cols-2 gap-3">
-     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine size={16}/> 下载</span><strong className="text-2xl tabular-nums">{coreConnected?(downloadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
-     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine size={16}/> 上传</span><strong className="text-2xl tabular-nums">{coreConnected?(uploadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine size={16}/> 下载</span><strong className="text-2xl tabular-nums">{coreConnected||mockMode?(downloadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
+     <Card className="gap-2 p-4"><span className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine size={16}/> 上传</span><strong className="text-2xl tabular-nums">{coreConnected||mockMode?(uploadRate/1048576).toFixed(2):'—'} <small className="text-xs font-normal">MB/s</small></strong><span className="text-xs text-muted-foreground">实时速度</span></Card>
    </div>
-   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle={coreConnected?'当前运行时连接':'等待 Core 连接'} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{activeConnections??'—'}</span>}/>
+   <Section title="运行状态"><Row icon={<Activity size={21}/>} title="活跃连接" subtitle={coreConnected||mockMode?'当前连接数':'等待 Core 连接'} trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{activeConnections??'—'}</span>}/>
    <Row icon={<Network size={21}/>} title="策略组" subtitle="JSON 配置定义" trailing={<span className="shrink-0 max-w-[35%] text-right text-xs text-muted-foreground">{config.outbounds.length}</span>}/></Section>
    <Section title="常用操作">
      <Row icon={<Globe2 size={21}/>} title="代理策略" subtitle="切换节点，查看测速" onClick={()=>navigate('proxies')}/>
@@ -113,13 +114,13 @@ function GroupDetail({tag}: {tag:string}) {
    </Section>
    <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={()=>{void testGroup(g.tag)}}><RefreshCw size={18}/>测试延迟</Button>
     <Button variant="outline" onClick={()=>{setName(g.tag);setMembersText(g.outbounds.join('\n'));setEdit(true)}}>编辑策略组</Button></div>
-   <Sheet open={edit} onOpenChange={setEdit}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+   <Sheet open={edit} onOpenChange={setEdit}><KeyboardAwareSheetContent open={edit} side="bottom">
      <SheetHeader><SheetTitle>编辑策略组</SheetTitle><SheetDescription>修改名称及候选节点，保存为配置草稿</SheetDescription></SheetHeader>
      <label className="space-y-2 text-sm">名称<Input value={name} onChange={e=>setName(e.target.value)}/></label>
      <label className="space-y-2 text-sm">候选节点（每行一个 tag）<Textarea value={membersText} onChange={e=>setMembersText(e.target.value)}/></label>
      <Button onClick={()=>{const members=membersText.split(/[,，\n]/).map(x=>x.trim()).filter(Boolean);if(!name.trim()||!members.length){show('请填写名称及成员');return}
        updateGroup(g.tag,{...g,tag:name.trim(),outbounds:members});setEdit(false)}}>保存策略组</Button>
-   </SheetContent></Sheet>
+   </KeyboardAwareSheetContent></Sheet>
    {g.tag!=='默认代理'&&<Button variant="destructive" size="sm" onClick={()=>removeGroup(g.tag)}><Trash2 size={17}/> 删除策略组</Button>}
  </div>
 }
@@ -153,14 +154,14 @@ function ResourcesScreen() {
     <div className="p-3"><Button className="w-full" variant="outline" onClick={()=>{setDraftTag('local/'+crypto.randomUUID().slice(0,8));setDraftName('');setDraftAddress('');setDraftProtocol('Shadowsocks');setEditNode('new')}}><Plus/>添加本地节点</Button></div>
    </Section>}
    {!sources.length&&tab==='sources'&&<p className="text-center text-sm text-muted-foreground">尚未添加订阅，可通过顶部添加按钮创建。</p>}
-   <Sheet open={editSource!==null} onOpenChange={open=>{if(!open)setEditSource(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+   <Sheet open={editSource!==null} onOpenChange={open=>{if(!open)setEditSource(null)}}><KeyboardAwareSheetContent open={editSource!==null} side="bottom">
      <SheetHeader><SheetTitle>编辑订阅来源</SheetTitle><SheetDescription>修改来源名称或订阅地址</SheetDescription></SheetHeader>
      <div className="space-y-3"><label className="block space-y-2 text-sm">名称<Input value={draftName} onChange={e=>setDraftName(e.target.value)}/></label>
        <label className="block space-y-2 text-sm">URL<Input value={draftUrl} onChange={e=>setDraftUrl(e.target.value)}/></label>
        <Button className="w-full" onClick={saveSource}>保存</Button>
        <Button variant="destructive" className="w-full" onClick={()=>{if(editSource)removeSource(editSource);setEditSource(null)}}>删除来源</Button>
-     </div></SheetContent></Sheet>
-   <Sheet open={editNode!==null} onOpenChange={open=>{if(!open)setEditNode(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+     </div></KeyboardAwareSheetContent></Sheet>
+   <Sheet open={editNode!==null} onOpenChange={open=>{if(!open)setEditNode(null)}}><KeyboardAwareSheetContent open={editNode!==null} side="bottom">
      <SheetHeader><SheetTitle>{editNode==='new'?'添加本地节点':'编辑节点资料'}</SheetTitle><SheetDescription>节点运行配置与认证信息需由 Core 校验</SheetDescription></SheetHeader>
      <div className="space-y-3"><label className="block space-y-2 text-sm">Tag<Input value={draftTag} onChange={e=>setDraftTag(e.target.value)} disabled={editNode!=='new'}/></label>
      <label className="block space-y-2 text-sm">名称<Input value={draftName} onChange={e=>setDraftName(e.target.value)}/></label>
@@ -170,7 +171,7 @@ function ResourcesScreen() {
      </NativeSelect></label>
      <Button className="w-full" onClick={saveNode}>保存节点资料</Button>
      {editNode!=='new'&&<Button variant="destructive" className="w-full" onClick={()=>{if(editNode)removeNode(editNode);setEditNode(null)}}>删除节点</Button>}
-     </div></SheetContent></Sheet>
+     </div></KeyboardAwareSheetContent></Sheet>
  </div>
 }
 function RulesScreen() {
@@ -193,7 +194,7 @@ function RulesScreen() {
      {!config.route.rules.length&&<p className="p-6 text-center text-sm text-muted-foreground">暂无路由规则，点击右上角添加。</p>}
      </Section>:
     <Section title="DNS"><Row icon={<Layers3 size={21}/>} title="DNS 规则" subtitle="通过原生配置编辑 DNS 规则" onClick={()=>show('请到设置 > 原生配置编辑 DNS')}/></Section>}
-   <Sheet open={editId!==null} onOpenChange={open=>{if(!open)setEditId(null)}}><SheetContent side="bottom" className="gap-4 rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+   <Sheet open={editId!==null} onOpenChange={open=>{if(!open)setEditId(null)}}><KeyboardAwareSheetContent open={editId!==null} side="bottom">
      <SheetHeader><SheetTitle>编辑路由规则</SheetTitle><SheetDescription>按列表顺序匹配</SheetDescription></SheetHeader>
      <label className="space-y-2 text-sm">匹配条件<Input value={match} onChange={e=>setMatch(e.target.value)}/></label>
      <label className="space-y-2 text-sm">目标出站<NativeSelect value={outbound} onChange={e=>setOutbound(e.target.value)}>
@@ -203,7 +204,7 @@ function RulesScreen() {
        <Button variant="outline" onClick={()=>{if(editId)moveRule(editId,1)}}>下移</Button></div>
      <Button onClick={saveRule}>保存规则</Button>
      <Button variant="destructive" onClick={()=>{if(editId)removeRule(editId);setEditId(null)}}>删除规则</Button>
-   </SheetContent></Sheet>
+   </KeyboardAwareSheetContent></Sheet>
  </div>
 }
 function SettingsScreen({openJson,openAbout}: {openJson:()=>void;openAbout:()=>void}) {
@@ -283,7 +284,7 @@ function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)
   close()
  }
  return <Sheet open={kind!==null} onOpenChange={o=>{if(!o)close()}}>
-    <SheetContent side="bottom" className="max-h-[90dvh] gap-4 overflow-y-auto rounded-t-xl pb-[calc(16px+env(safe-area-inset-bottom))]" showCloseButton={false}>
+    <KeyboardAwareSheetContent open={kind!==null} side="bottom" showCloseButton={false}>
       <SheetHeader><SheetTitle>{kind==='group'?'新建策略组':kind==='source'?'添加订阅':'新增路由规则'}</SheetTitle><SheetDescription>编辑工作区配置。应用到设备时由 NiPath Core 完成校验。</SheetDescription></SheetHeader>
       <div className="space-y-4 px-1">
        <label className="flex flex-col gap-2 text-sm font-medium">{kind==='rule'?'匹配条件':kind==='source'?'订阅名称':'策略组名称'}<Input value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='rule'?'domain_suffix: example.com':kind==='source'?'我的订阅':'媒体代理'}/></label>
@@ -292,7 +293,7 @@ function AddSheet({kind,onOpenChange}: {kind:AddKind;onOpenChange:(open:boolean)
        {kind==='rule'&&<label className="flex flex-col gap-2 text-sm font-medium">目标出站<NativeSelect value={outbound} onChange={e=>setOutbound(e.target.value)}><option value="direct">direct</option>{config.outbounds.map(g=><option key={g.tag} value={g.tag}>{g.tag}</option>)}</NativeSelect></label>}
        <div className="grid grid-cols-2 gap-3 pt-1"><Button type="button" variant="outline" size="lg" onClick={close}>取消</Button><Button type="button" size="lg" onClick={submit}>确认添加</Button></div>
       </div>
-    </SheetContent>
+    </KeyboardAwareSheetContent>
    </Sheet>
 }
 type HistoryRoute = {
