@@ -11,8 +11,11 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByTestId('android-shell')).toHaveClass(/bg-background/)
   await expect(nav.getByRole('button', { name: '概览' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
-  await expect(page.getByRole('button', { name: '启动代理' })).toBeDisabled()
-  await expect(page.getByTestId('mobile-page-overview').getByText('Core 未连接', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '停止代理' })).toBeEnabled()
+  await expect(page.getByText('Aurora Premium')).toHaveCount(0) // available in the resources tab
+  await page.getByRole('button', { name: '停止代理' }).click()
+  await expect(page.getByRole('button', { name: '启动代理' })).toBeEnabled()
+  await page.getByRole('button', { name: '启动代理' }).click()
   // Primary screens have exactly one heading in the shared app bar, not a
   // separate web-style heading at the top of their content.
   await expect(page.getByRole('heading', { name: '概览', exact: true })).toHaveCount(1)
@@ -43,15 +46,8 @@ test('Android: bottom navigation survives all five destinations and detail back'
   await expect(page.getByRole('heading', { name: '代理', exact: true })).toHaveCount(1)
   await expect(nav.getByRole('button', { name: '代理' })).toHaveAttribute('aria-current', 'page')
 
-  // The workspace starts empty: create a real local draft group instead of assuming fictitious seeded nodes.
-  await page.getByRole('button', { name: '添加策略组' }).click()
-  const groupForm = page.getByRole('dialog')
-  await expect(groupForm).toBeVisible()
-  await groupForm.locator('input').first().fill('默认代理')
-  await groupForm.locator('textarea').fill('direct')
-  await groupForm.getByRole('button', { name: '确认添加' }).click()
-  await expect(groupForm).toHaveCount(0)
-  await page.getByRole('button', { name: /默认代理/ }).click()
+  await expect(page.getByRole('button', { name: '默认代理' })).toBeVisible()
+  await page.getByRole('button', { name: '默认代理' }).click()
   await expect(page.getByTestId('mobile-detail-title')).toHaveText('默认代理')
   await expect(page.getByRole('heading', { name: '默认代理', exact: true })).toHaveCount(0)
   await expect(nav).toHaveCount(0) // Native Android navigation hierarchy: detail replaces root tabs
@@ -123,14 +119,16 @@ test('Android: rules can be added, edited, enabled and deleted in the workspace'
   await expect(page.getByText('domain_suffix: example.net')).toHaveCount(0)
 })
 
-test('Desktop: presentation has no fake nodes or connections and only overview retains the demo notice', async ({ page }, testInfo) => {
+test('Desktop: real-looking preview fixtures are available and only overview retains the demo notice', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await page.goto('/')
   await expect(page.getByText('演示模式', { exact: true })).toHaveCount(1)
-  await expect(page.getByText('Core 未连接', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('代理运行中')).toBeVisible()
   await page.getByRole('button', { name: '代理', exact: true }).click()
   await expect(page.getByText('演示模式', { exact: true })).toBeHidden()
-  await expect(page.getByText('新建策略组后在此管理成员')).toBeVisible()
+  await expect(page.getByRole('button', { name: '默认代理' })).toBeVisible()
+  await page.getByRole('button', { name: '资源', exact: true }).click()
+  await expect(page.getByText('Aurora Premium')).toBeVisible()
 })
 
 test('Android: preserve tab filters and route history while navigating', async ({ page }, testInfo) => {
