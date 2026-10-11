@@ -42,13 +42,15 @@ The workflow `../.github/workflows/webui-build.yml` builds the Vite app to `../d
 
 Open <https://fanju6.github.io/NiPath-Architecture/>. For large styling changes, perform a hard refresh or open a private/incognito tab to avoid the browser cache.
 
-## Demo limitations
+## Preview data, UI and Core boundaries
 
-The current site is a **Core-aware frontend with an empty, editable session workspace**, not a functioning transparent proxy. No fabricated traffic, subscribers or nodes are preloaded. Device control, provider refresh and testing call the same-origin Core API and fail closed while the Go Core is unavailable. Local JSON/group/rule/resource editing works without Core but does not apply to sing-box.
+GitHub Pages and local Vite development use **isolated Mock data** from `src/lib/mock-data.ts` to provide a realistic interface with preloaded subscriptions, nodes, routing rules and strategy groups. Preview actions operate the shared Zustand state; settings and local workspace edits are retained in **sessionStorage**. The only visible “演示模式” notice is at the **bottom of Overview**. All other pages keep product-style content and controls.
 
-See the precise [implementation status and Core dependency matrix](../design/NiPath-WebUI-Implementation-Status.md). Full native sing-box schema/transaction semantics, live catalog synchronization, real subscription parsing and Root/VPN service are **not yet implemented**.
+Desktop and Android share the **same state and capabilities**: sources and node editing, proxy-group management, rule ordering/editing, JSON import/export, DNS, security information and appearance. Mobile forms use a keyboard-aware shadcn `Sheet` that tracks `window.visualViewport` and scrolls focused inputs into view.
 
-This frontend uses one JSON configuration authoring interface; it does not introduce Managed/Expert modes. No sample traffic, subscription update state or selected proxy is asserted as a real engine measurement.
+Mock runtime actions and sample measurements are **not** real Android/VPN/sing-box activity. When an authenticated Core responds on the same origin, the client switches away from Mock runtime behavior, and requests device operations through the Core HTTP API instead of pretending success. There is still no functioning Go Core service in this repository; real Provider parsing, Android root/VPN service, and runtime subscriptions require its implementation.
+
+See [implementation status](../design/NiPath-WebUI-Implementation-Status.md). The official registry components and Neutral theme stay unchanged.
 
 ## Official component provenance and Android UX QA
 
