@@ -1,7 +1,8 @@
 import * as React from 'react'
 import AndroidApp from './mobile/AndroidApp'
+import { ProxyGroupsView } from './components/proxy-groups-view'
 import {
-  Activity, ArrowDownToLine, ArrowRight, ArrowUpFromLine, Blocks, Check, ChevronRight,
+  Activity, ArrowDownToLine, ArrowRight, ArrowUpFromLine, Blocks, Check,
   CircleHelp, Code2, ExternalLink, Globe2, HardDrive, LayoutDashboard,
   Moon, Network, Pause, Play, Plus, RefreshCcw, Route, Settings2,
   Sun, Trash2, Zap,
@@ -35,7 +36,6 @@ const navigation: { id: Page; name: string; icon: typeof LayoutDashboard }[] = [
   { id: 'settings', name: '设置', icon: Settings2 },
 ]
 const labels: Record<Page,string> = { overview:'概览', proxies:'代理', resources:'资源', rules:'规则', settings:'设置' }
-const groupNames: Record<Group['type'],string> = { selector:'手动选择', urltest:'自动测速', 'load-balance':'负载均衡' }
 
 function PageHeading({title,description,children}: {title:string;description:string;children?:React.ReactNode}) {
   return <div className="flex flex-wrap items-center justify-between gap-4">
@@ -75,50 +75,46 @@ function Overview(){
 }
 
 function Proxies(){
- const {config,nodes,selectedGroup,selectGroup,selected,selectNode,testGroup,addGroup,updateGroup,removeGroup,show}=useUI()
- const [search,setSearch]=React.useState('')
- const [nodeSearch,setNodeSearch]=React.useState('')
+ const {config,addGroup,updateGroup,removeGroup,show}=useUI()
  const [dialog,setDialog]=React.useState<'new'|'edit'|null>(null)
+ const [target,setTarget]=React.useState('')
  const [name,setName]=React.useState('')
  const [type,setType]=React.useState<Group['type']>('selector')
  const [members,setMembers]=React.useState('')
- const group=config.outbounds.find(x=>x.tag===selectedGroup)||config.outbounds[0]
- const beginEdit=()=>{if(!group)return;setName(group.tag);setType(group.type);setMembers(group.outbounds.join('\n'));setDialog('edit')}
- const save=()=>{
-  const tag=name.trim(),outbounds=members.split(/[,，\n]/).map(x=>x.trim()).filter(Boolean)
-  if(!tag||!outbounds.length){show('请输入策略组名称与成员');return}
-  if(dialog==='new'&&config.outbounds.some(x=>x.tag===tag)){show('策略组名称已存在');return}
-  const value={tag,type,outbounds}
-  if(dialog==='edit'&&group)updateGroup(group.tag,{...group,...value})
-  else addGroup(value)
-  setDialog(null);setName('');setMembers('')
+ const beginEdit=(tag:string)=>{
+   const group=config.outbounds.find(x=>x.tag===tag)
+   if(!group)return
+   setTarget(tag);setName(group.tag);setType(group.type);setMembers(group.outbounds.join('\n'));setDialog('edit')
  }
- const candidates=(group?.outbounds||[]).filter(tag=>tag.toLowerCase().includes(nodeSearch.toLowerCase())||nodes.some(n=>n.tag===tag&&n.name.toLowerCase().includes(nodeSearch.toLowerCase())))
- return <div className="space-y-6"><PageHeading title="代理" description="管理策略组、候选成员与节点出口。"><Button onClick={()=>{setName('');setMembers('');setType('selector');setDialog('new')}}><Plus/>新建策略组</Button></PageHeading>
-  <div className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-   <Card><CardHeader><CardTitle>策略组 <Badge variant="secondary">{config.outbounds.length}</Badge></CardTitle></CardHeader><CardContent className="space-y-3">
-     <Input aria-label="搜索策略组" value={search} onChange={e=>setSearch(e.target.value)} placeholder="搜索策略组"/>
-     {config.outbounds.filter(g=>g.tag.toLowerCase().includes(search.toLowerCase())).map(g=><Button key={g.tag} variant={g.tag===group?.tag?'secondary':'ghost'} className="w-full justify-between" onClick={()=>{selectGroup(g.tag);setNodeSearch('')}}><span className="truncate">{g.tag}</span><ChevronRight/></Button>)}
-     {!config.outbounds.length&&<p className="py-3 text-sm text-muted-foreground">还没有策略组</p>}
-   </CardContent></Card>
-   {group?<Card><CardHeader><CardTitle>{group.tag}</CardTitle><CardDescription>{groupNames[group.type]} · {group.outbounds.length} 个成员</CardDescription>
-     <CardAction><Button variant="outline" size="icon" aria-label="测试延迟" onClick={()=>{void testGroup(group.tag)}}><RefreshCcw/></Button></CardAction></CardHeader>
-     <CardContent className="space-y-4">
-       <Input aria-label="筛选候选成员" placeholder="筛选候选节点" value={nodeSearch} onChange={e=>setNodeSearch(e.target.value)}/>
-       <div className="divide-y rounded-lg border">{candidates.map(tag=>{const node=nodes.find(n=>n.tag===tag),chosen=group.type==='selector'&&selected[group.tag]===tag
-        return <div key={tag} className="flex flex-wrap items-center gap-3 px-4 py-3"><div className="min-w-0 flex-1"><p className="font-medium">{node?.name||tag}</p><p className="text-xs text-muted-foreground">{node?.source||'策略组成员'}</p></div>
-         {node&&<Badge variant="outline">{latencyText(node.latency)}</Badge>}
-         {group.type==='selector'?<Button variant={chosen?'secondary':'outline'} size="sm" onClick={()=>{void selectNode(group.tag,tag)}}>{chosen?'已选择':'选择'}</Button>:<Badge variant="secondary">自动</Badge>}
-        </div>})}{!candidates.length&&<p className="p-6 text-sm text-muted-foreground">暂无候选成员</p>}</div>
-     </CardContent><CardFooter className="justify-end gap-2"><Button variant="outline" onClick={beginEdit}>编辑策略组</Button><Button variant="destructive" onClick={()=>removeGroup(group.tag)}><Trash2/>删除</Button></CardFooter></Card>:
-    <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">新建策略组后在此管理成员</CardContent></Card>}
-  </div>
-  <Dialog open={dialog!==null} onOpenChange={open=>{if(!open)setDialog(null)}}><DialogContent><DialogHeader><DialogTitle>{dialog==='new'?'新建策略组':'编辑策略组'}</DialogTitle><DialogDescription>修改工作区配置草稿</DialogDescription></DialogHeader>
-   <div className="space-y-4"><label className="block space-y-2 text-sm">名称<Input value={name} onChange={e=>setName(e.target.value)}/></label>
-    <label className="block space-y-2 text-sm">类型<NativeSelect value={type} onChange={e=>setType(e.target.value as Group['type'])}><option value="selector">手动选择</option><option value="urltest">自动测速</option><option value="load-balance">负载均衡</option></NativeSelect></label>
-    <label className="block space-y-2 text-sm">成员 tag（换行或逗号分隔）<Textarea value={members} onChange={e=>setMembers(e.target.value)}/></label>
-   </div><DialogFooter><Button variant="outline" onClick={()=>setDialog(null)}>取消</Button><Button onClick={save}>保存</Button></DialogFooter>
-  </DialogContent></Dialog>
+ const save=()=>{
+   const tag=name.trim(),outbounds=members.split(/[,，\n]/).map(x=>x.trim()).filter(Boolean)
+   if(!tag||!outbounds.length){show('请输入策略组名称与候选成员');return}
+   const value={tag,type,outbounds}
+   if(dialog==='edit'){const original=config.outbounds.find(x=>x.tag===target);if(original)updateGroup(target,{...original,...value})}
+   else addGroup(value)
+   setDialog(null)
+ }
+ return <div className="space-y-6">
+   <PageHeading title="代理" description="直接展开策略组并切换节点；列表和标签布局可自由切换。">
+     <Button onClick={()=>{setName('');setMembers('');setType('selector');setDialog('new')}}><Plus/>新建策略组</Button>
+   </PageHeading>
+   <ProxyGroupsView onEdit={beginEdit}/>
+   <Dialog open={dialog!==null} onOpenChange={open=>{if(!open)setDialog(null)}}>
+     <DialogContent><DialogHeader><DialogTitle>{dialog==='new'?'新建策略组':'编辑策略组'}</DialogTitle>
+       <DialogDescription>更改工作区配置草稿；节点选择无需打开此窗口。</DialogDescription></DialogHeader>
+       <div className="space-y-4">
+         <label className="block space-y-2 text-sm">组名<Input value={name} onChange={e=>setName(e.target.value)}/></label>
+         <label className="block space-y-2 text-sm">组类型<NativeSelect value={type} onChange={e=>setType(e.target.value as Group['type'])}>
+           <option value="selector">手动选择</option><option value="urltest">自动测速</option><option value="load-balance">负载均衡</option>
+         </NativeSelect></label>
+         <label className="block space-y-2 text-sm">候选成员 Tag（逗号或换行分隔）<Textarea value={members} onChange={e=>setMembers(e.target.value)}/></label>
+       </div>
+       <DialogFooter className="gap-2">
+         {dialog==='edit'&&<Button variant="destructive" className="sm:mr-auto" onClick={()=>{removeGroup(target);setDialog(null)}}><Trash2/>删除策略组</Button>}
+         <Button variant="outline" onClick={()=>setDialog(null)}>取消</Button><Button onClick={save}>保存</Button>
+       </DialogFooter>
+     </DialogContent>
+   </Dialog>
  </div>
 }
 
