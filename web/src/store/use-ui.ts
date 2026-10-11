@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { configSchema, type Config, type Group, type Node, type Rule, type Source } from '../lib/model'
+import { mockConfig, mockNodes, mockSelected, mockSources, usePreviewFixtures } from '../lib/mock-data'
 import { controlCore, getCoreConfig, getCoreStatus, refreshSubscription, selectGroupNode, testGroup, validateCoreConfig, putCoreConfig } from '../lib/core-api'
 
 export type Page = 'overview'|'proxies'|'resources'|'rules'|'settings'
@@ -12,6 +13,7 @@ type UIState = {
   revision: number
   coreRevision: string|null
   coreConnected: boolean
+  mockMode: boolean
   runtime: Runtime
   selectedGroup:string
   demoRunning:boolean
@@ -57,14 +59,16 @@ const emptyConfig:Config = { log:{level:'info'}, outbounds:[], route:{rules:[]},
 const reason=(e:unknown)=>e instanceof Error?e.message:'未知错误'
 const hasStatus=(v:unknown):v is {running?:boolean;ready?:boolean;state?:string;traffic?:{upload_rate?:number;download_rate?:number;connections?:number}}=>
   !!v && typeof v==='object' && ('running' in v || 'ready' in v || 'state' in v)
-const initial:Pick<UIState,'config'|'sources'|'nodes'|'selected'|'revision'>={
-  config:emptyConfig,sources:[],nodes:[],selected:{},revision:0,
-}
+const preview=usePreviewFixtures()
+const initial:Pick<UIState,'config'|'sources'|'nodes'|'selected'|'revision'>=preview ? {
+ config:structuredClone(mockConfig),sources:structuredClone(mockSources),
+ nodes:structuredClone(mockNodes),selected:{...mockSelected},revision:1,
+} : {config:emptyConfig,sources:[],nodes:[],selected:{},revision:0}
 
 export const useUI = create<UIState>()(persist((set,get)=>({
-  page:'overview',theme:'light',...initial,coreRevision:null,coreConnected:false,
-  runtime:'disconnected',selectedGroup:'',demoRunning:false,
-  notice:null,busy:false,downloadRate:0,uploadRate:0,activeConnections:null,
+  page:'overview',theme:'light',...initial,coreRevision:null,coreConnected:false,mockMode:preview,
+  runtime:preview?'ready':'disconnected',selectedGroup:preview?'默认代理':'',demoRunning:preview,
+  notice:null,busy:false,downloadRate:preview?12400000:0,uploadRate:preview?1800000:0,activeConnections:preview?132:null,
   setPage:page=>set({page}),
   setTheme:theme=>set({theme}),
   show:notice=>set({notice}),
@@ -74,13 +78,17 @@ export const useUI = create<UIState>()(persist((set,get)=>({
       const data=await getCoreStatus()
       if(!hasStatus(data))throw new Error('Core 状态响应缺少必要字段')
       const running=data.running===true||data.ready===true||data.state==='running'||data.state==='ready'
-      set({coreConnected:true,runtime:running?'ready':'stopped',demoRunning:running,
+      set(state=>({coreConnected:true,mockMode:false,
+        ...(state.mockMode?{config:structuredClone(emptyConfig),sources:[],nodes:[],selected:{},selectedGroup:'',revision:0}:{}),
+        runtime:running?'ready':'stopped',demoRunning:running,
         downloadRate:running?(data.traffic?.download_rate??0):0,
         uploadRate:running?(data.traffic?.upload_rate??0):0,
-        activeConnections:running?(data.traffic?.connections??null):0})
+        activeConnections:running?(data.traffic?.connections??null):0}))
     }catch{
-      set({coreConnected:false,runtime:'disconnected',demoRunning:false,
-        downloadRate:0,uploadRate:0,activeConnections:null})
+      set(state=>state.mockMode ? {coreConnected:false} : {
+        coreConnected:false,runtime:'disconnected',demoRunning:false,
+        downloadRate:0,uploadRate:0,activeConnections:null
+      })
     }
   },
   loadCoreConfig:async()=>{
@@ -107,16 +115,33 @@ export const useUI = create<UIState>()(persist((set,get)=>({
   },
   selectGroup:selectedGroup=>set({selectedGroup}),
   selectNode:async(group,node)=>{
+    if(get().mockMode){
+      set(s=>({selected:{...s.selected,[group]:node},notice:'已切换至 '+node}))
+      return
+    }
     if(!get().coreConnected){get().show('Core 未连接，无法切换实际出口');return}
     try{await selectGroupNode(group,node);set(s=>({selected:{...s.selected,[group]:node},notice:'已提交节点选择'}))}
     catch(e){get().show(reason(e))}
   },
   testGroup:async(group)=>{
+    if(get().mockMode){
+      const groupData=get().config.outbounds.find(g=>g.tag===group)
+      if(!groupData){get().show('策略组不存在');return}
+      const refs=new Set(groupData.outbounds)
+      set(s=>({nodes:s.nodes.map(n=>refs.has(n.tag)?{...n,latency:45+(n.tag.length*17)%175}:n),
+        notice:'测速完成'}))
+      return
+    }
     if(!get().coreConnected){get().show('Core 未连接，无法执行节点测速');return}
     try{await testGroup(group);get().show('已开始测速，请等待引擎返回结果')}
     catch(e){get().show(reason(e))}
   },
   setRunning:async(v)=>{
+    if(get().mockMode){
+      set({demoRunning:v,runtime:v?'ready':'stopped',downloadRate:v?12400000:0,
+        uploadRate:v?1800000:0,activeConnections:v?132:0,notice:v?'代理已启动':'代理已停止'})
+      return
+    }
     if(!get().coreConnected){get().show('Core 未连接，代理控制不可用');return}
     set({busy:true})
     try{
@@ -145,6 +170,11 @@ export const useUI = create<UIState>()(persist((set,get)=>({
   updateSource:(id,name,url)=>set(s=>({sources:s.sources.map(x=>x.id===id?{...x,name,url}:x),notice:'订阅来源已更新'})),
   removeSource:id=>set(s=>({sources:s.sources.filter(x=>x.id!==id),nodes:s.nodes.filter(x=>x.source!==s.sources.find(y=>y.id===id)?.name),notice:'来源已从工作区移除'})),
   refreshSource:async id=>{
+    if(get().mockMode){
+      set(s=>({sources:s.sources.map(x=>x.id===id?{...x,updated:'刚刚',status:'applied'}:x),
+        notice:'订阅已更新'}))
+      return
+    }
     if(!get().coreConnected){get().show('Core 未连接，无法同步订阅');return}
     try{
       await refreshSubscription(id)
@@ -180,11 +210,19 @@ export const useUI = create<UIState>()(persist((set,get)=>({
       return {ok:true}
     }catch(e){return {ok:false,error:reason(e)}}
   },
-  resetDrafts:()=>set(s=>({...initial,theme:s.theme,coreConnected:s.coreConnected,runtime:s.runtime,demoRunning:s.demoRunning,coreRevision:null,notice:'本地草稿已清空'})),
+  resetDrafts:()=>set(s=>({...initial,theme:s.theme,coreConnected:s.coreConnected,
+    mockMode:s.mockMode,runtime:s.runtime,demoRunning:s.demoRunning,
+    coreRevision:null,notice:'工作区已恢复初始数据'})),
 }),{
   name:'nipath-session-workspace-v1',
   storage:createJSONStorage(()=>sessionStorage),
-  version:1,
+  version:2,
+  migrate:(value)=> {
+    const old=value as Partial<UIState>
+    // Preserve user-created workspace entries when upgrading from empty v1 previews.
+    const hasEntries=!!old.config?.outbounds.length||!!old.sources?.length||!!old.nodes?.length
+    return {...(hasEntries?old:{...initial,theme:old.theme||'light'}),mockMode:preview}
+  },
   // URLs and config can contain secrets: never save these to localStorage.
   partialize:s=>({theme:s.theme,config:s.config,revision:s.revision,selected:s.selected,
     nodes:s.nodes,sources:s.sources,selectedGroup:s.selectedGroup}),
