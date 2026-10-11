@@ -54,16 +54,16 @@ function Metric({title,value,subtitle,icon:Icon}: {title:string;value:string;sub
    <CardContent><p className="text-xs text-muted-foreground">{subtitle}</p></CardContent></Card>
 }
 function Overview(){
- const {demoRunning,coreConnected,setRunning,checkCore,busy,nodes,sources,config,setPage,downloadRate,uploadRate,activeConnections}=useUI()
- return <div className="space-y-6"><PageHeading title="概览" description="代理状态、实时传输和资源信息。"><StatusBadge ok={demoRunning} connected={coreConnected}/></PageHeading>
-  <Card><CardHeader><CardTitle>代理服务</CardTitle><CardDescription>NiPath Core · 网络接管状态</CardDescription><CardAction><StatusBadge ok={demoRunning} connected={coreConnected}/></CardAction></CardHeader>
-  <CardContent className="flex flex-wrap items-center justify-between gap-4"><p className="text-xl font-semibold">{!coreConnected?'等待 Core 连接':demoRunning?'服务正在运行':'服务已停止'}</p>
+ const {demoRunning,coreConnected,mockMode,setRunning,checkCore,busy,nodes,sources,config,setPage,downloadRate,uploadRate,activeConnections}=useUI()
+ return <div className="space-y-6"><PageHeading title="概览" description="代理状态、实时传输和资源信息。"><StatusBadge ok={demoRunning} connected={coreConnected||mockMode}/></PageHeading>
+  <Card><CardHeader><CardTitle>代理服务</CardTitle><CardDescription>NiPath Core · 网络接管状态</CardDescription><CardAction><StatusBadge ok={demoRunning} connected={coreConnected||mockMode}/></CardAction></CardHeader>
+  <CardContent className="flex flex-wrap items-center justify-between gap-4"><p className="text-xl font-semibold">{!coreConnected&&!mockMode?'等待 Core 连接':demoRunning?'服务正在运行':'服务已停止'}</p>
    <div className="flex gap-2"><Button variant="outline" onClick={()=>{void checkCore()}}><RefreshCcw/>刷新状态</Button>
-   <Button disabled={!coreConnected||busy} onClick={()=>{void setRunning(!demoRunning)}}>{demoRunning?<Pause/>:<Play/>}{demoRunning?'停止代理':'启动代理'}</Button></div>
+   <Button disabled={(!coreConnected&&!mockMode)||busy} onClick={()=>{void setRunning(!demoRunning)}}>{demoRunning?<Pause/>:<Play/>}{demoRunning?'停止代理':'启动代理'}</Button></div>
   </CardContent></Card>
   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-   <Metric title="下载速度" value={coreConnected?(downloadRate/1048576).toFixed(2)+' MB/s':'—'} subtitle="实时运行数据" icon={ArrowDownToLine}/>
-   <Metric title="上传速度" value={coreConnected?(uploadRate/1048576).toFixed(2)+' MB/s':'—'} subtitle="实时运行数据" icon={ArrowUpFromLine}/>
+   <Metric title="下载速度" value={coreConnected||mockMode?(downloadRate/1048576).toFixed(2)+' MB/s':'—'} subtitle="实时运行数据" icon={ArrowDownToLine}/>
+   <Metric title="上传速度" value={coreConnected||mockMode?(uploadRate/1048576).toFixed(2)+' MB/s':'—'} subtitle="实时运行数据" icon={ArrowUpFromLine}/>
    <Metric title="活动连接" value={activeConnections===null?'—':String(activeConnections)} subtitle="设备连接数" icon={Activity}/>
    <Metric title="节点总量" value={String(nodes.length)} subtitle="当前工作区" icon={Globe2}/>
   </div>
@@ -240,7 +240,7 @@ function Settings(){
  </div>
 }
 function AppSidebar(){
- const {page,setPage,coreConnected,demoRunning}=useUI()
+ const {page,setPage,coreConnected,mockMode,demoRunning}=useUI()
  const {isMobile,setOpenMobile}=useSidebar()
  return <Sidebar collapsible="icon">
    <SidebarHeader><SidebarMenu><SidebarMenuItem><SidebarMenuButton size="lg" onClick={()=>{setPage('overview');if(isMobile)setOpenMobile(false)}}>
@@ -253,7 +253,7 @@ function AppSidebar(){
    <SidebarGroup className="mt-auto"><SidebarGroupLabel>项目</SidebarGroupLabel><SidebarGroupContent><SidebarMenu><SidebarMenuItem>
      <SidebarMenuButton asChild tooltip="GitHub"><a href="https://github.com/Fanju6/NiPath-Architecture" target="_blank" rel="noreferrer"><ExternalLink/><span>架构仓库</span></a></SidebarMenuButton>
    </SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
-   </SidebarContent><SidebarFooter><div className="flex items-center gap-2 px-2 text-xs text-sidebar-foreground"><span className="size-2 rounded-full bg-sidebar-primary"/><span className="group-data-[collapsible=icon]:hidden">{!coreConnected?'Core 未连接':demoRunning?'代理运行中':'代理已停止'}</span></div></SidebarFooter><SidebarRail/>
+   </SidebarContent><SidebarFooter><div className="flex items-center gap-2 px-2 text-xs text-sidebar-foreground"><span className="size-2 rounded-full bg-sidebar-primary"/><span className="group-data-[collapsible=icon]:hidden">{!coreConnected&&!mockMode?'Core 未连接':demoRunning?'代理运行中':'代理已停止'}</span></div></SidebarFooter><SidebarRail/>
  </Sidebar>
 }
 
