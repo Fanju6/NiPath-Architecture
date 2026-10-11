@@ -227,7 +227,7 @@ function Settings(){
  const importJson=async(file?:File)=>{if(!file)return;if(file.size>5*1024*1024){setError('配置文件超过 5 MB');return}
    try{const text=await file.text();JSON.parse(text);setRaw(text);setError('')}catch(e){setError(e instanceof Error?e.message:'导入失败')}}
  return <div className="space-y-6"><PageHeading title="设置" description="Core 状态、配置管理和外观。"><Badge variant="outline">本地修订 {revision}</Badge></PageHeading>
-  <Tabs defaultValue="config" className="space-y-4"><TabsList className="h-auto flex-wrap"><TabsTrigger value="config">配置</TabsTrigger><TabsTrigger value="engine">内核</TabsTrigger><TabsTrigger value="appearance">外观</TabsTrigger></TabsList>
+  <Tabs defaultValue="config" className="space-y-4"><TabsList className="h-auto flex-wrap"><TabsTrigger value="config">配置</TabsTrigger><TabsTrigger value="engine">内核</TabsTrigger><TabsTrigger value="dns">DNS</TabsTrigger><TabsTrigger value="security">安全</TabsTrigger><TabsTrigger value="appearance">外观</TabsTrigger><TabsTrigger value="about">关于</TabsTrigger></TabsList>
    <TabsContent value="config"><Card><CardHeader><CardTitle>原生 JSON 编辑器</CardTitle><CardDescription>工作区草稿 · 应用需由设备 Core 校验和保存</CardDescription></CardHeader><CardContent className="space-y-4">
     <Textarea className="min-h-[360px] font-mono text-xs leading-relaxed" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false}/>
     {error&&<p className="text-sm text-destructive">{error}</p>}
@@ -244,7 +244,20 @@ function Settings(){
     <div className="flex justify-between"><span className="text-sm">代理服务</span><StatusBadge ok={demoRunning} connected={coreConnected}/></div>
     <Button variant="outline" onClick={()=>{void checkCore()}}><RefreshCcw/>刷新连接</Button>
    </CardContent></Card></TabsContent>
+   <TabsContent value="dns"><Card><CardHeader><CardTitle>DNS 配置</CardTitle><CardDescription>通过唯一 JSON 配置进行修改</CardDescription></CardHeader>
+    <CardContent className="space-y-3"><p className="text-sm">当前定义了 {Array.isArray(config.dns?.servers)?config.dns.servers.length:0} 个 DNS 服务器。</p>
+     <pre className="max-h-52 overflow-auto rounded-md border bg-muted p-3 text-xs">{JSON.stringify(config.dns||{servers:[]},null,2)}</pre>
+     <p className="text-xs text-muted-foreground">请在配置编辑器中编辑 dns 字段并保存。</p>
+    </CardContent></Card></TabsContent>
+   <TabsContent value="security"><Card><CardHeader><CardTitle>安全与访问</CardTitle></CardHeader><CardContent className="space-y-2">
+     <p className="text-sm">API 连接：{coreConnected?'已连接':'未连接'}</p>
+     <p className="text-sm text-muted-foreground">使用可信的同源 NiPath Core API；管理页面不具备任意 Shell 执行权限。</p>
+   </CardContent></Card></TabsContent>
    <TabsContent value="appearance"><Card><CardHeader><CardTitle>外观</CardTitle></CardHeader><CardContent className="flex items-center justify-between"><Label htmlFor="desktop-theme">深色模式</Label><Switch id="desktop-theme" checked={theme==='dark'} onCheckedChange={v=>setTheme(v?'dark':'light')}/></CardContent></Card></TabsContent>
+   <TabsContent value="about"><Card><CardHeader><CardTitle>关于 NiPath</CardTitle><CardDescription>NiPath · 多平台代理管理系统</CardDescription></CardHeader>
+     <CardContent className="space-y-3"><p className="text-sm">产品目标版本：1.0.0</p><p className="text-sm">客户端：React WebUI</p>
+       <Button asChild variant="outline"><a href="https://github.com/Fanju6/NiPath-Architecture" target="_blank" rel="noreferrer"><ExternalLink/>GitHub 仓库</a></Button>
+     </CardContent></Card></TabsContent>
   </Tabs>
  </div>
 }
